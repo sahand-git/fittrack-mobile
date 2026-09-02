@@ -49,11 +49,11 @@ The starter application identifier is `com.sahand.fitness`. Confirm it is the id
 
 ## Checks completed and remaining
 
-Completed here: TypeScript check, frontend production build, six health-reader logic tests, native plugin sync for both platforms, and browser checks for first launch, validation, one-time legacy-profile review, saved-profile reload, retained logs, manual step entry, and denied motion access.
+Version 1.2 checks passed: TypeScript, frontend production build, 18 unit tests, native plugin sync, Android APK compilation, unsigned iPhone compilation, and browser checks at 320/360/390 pixel widths. Browser checks cover food-picker reset, meat search, JSON download and text fallback, Gemini consent and simulated Smart Text/chat responses. The APK download checksum was verified and its native backup plugins inspected.
 
-The health-reader tests simulate SDK responses; they are not physical-device integration tests. Android compilation, Xcode compilation, signing, real permission prompts, native step totals, and app-store review have not been verified here. This Windows workspace has no Android SDK or Xcode.
+Health and Gemini tests simulate service responses. Real phone sharing, health permission prompts and totals, a live personal Gemini key, stable Android release signing, Apple distribution signing, and app-store review remain unverified. GitHub Actions performed native compilation; this Windows workspace has no Android SDK or Xcode.
 
-Before distributing, test both phones with known daily totals, denied/revoked permission, zero/no readable steps, repeated reads, and midnight/timezone boundaries. Review the included health-data explanation (`public/privacypolicy.html`) against your deployed server's actual data handling. The existing email-backup feature is separate from Google OAuth or health authorization.
+Before distributing, test both phones with known daily totals, denied/revoked permission, zero/no readable steps, repeated reads, midnight/timezone boundaries, and a saved JSON export. Review the included health-data explanation (`public/privacypolicy.html`). Email-only cloud backup is disabled; Google OAuth requires a registered Google Cloud project and authenticated storage.
 
 ## References
 
@@ -62,3 +62,4 @@ Before distributing, test both phones with known daily totals, denied/revoked pe
 - [Android Health Connect setup](https://developer.android.com/health-and-fitness/health-connect/get-started)
 - [Samsung Health sharing through Health Connect](https://developer.samsung.com/health/blog/en/accessing-samsung-health-data-through-health-connect)
 - [Apple Health authorization](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data)
+
