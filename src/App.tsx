@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FitnessProvider, useFitness } from './context/FitnessContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoginScreen } from './components/LoginScreen';
 import { Navbar } from './components/Navbar';
 import { DailySummary } from './components/DailySummary';
 import { MealTracker } from './components/MealTracker';
@@ -405,7 +407,7 @@ function DashboardContent() {
 
       <FoodLogModal
         isOpen={isFoodLogOpen}
-        onClose={() => setIsFoodLogOpen(false)}
+        onClose={() => { setIsFoodLogOpen(false); setActiveTab('dashboard'); }}
         mealType={selectedMealForAction}
         onOpenBarcodeScanner={(meal) => {
           setSelectedMealForAction(meal);
@@ -425,12 +427,12 @@ function DashboardContent() {
 
       <AICoachModal
         isOpen={isAICoachOpen}
-        onClose={() => setIsAICoachOpen(false)}
+        onClose={() => { setIsAICoachOpen(false); setActiveTab('dashboard'); }}
       />
 
       <AddWorkoutModal
         isOpen={isAddWorkoutOpen}
-        onClose={() => setIsAddWorkoutOpen(false)}
+        onClose={() => { setIsAddWorkoutOpen(false); setActiveTab('dashboard'); }}
         onOpenReferences={() => setIsReferencesOpen(true)}
       />
 
@@ -455,10 +457,17 @@ function DashboardContent() {
   );
 }
 
-export default function App() {
+function AccountApp() {
+  const {user,guest,ready}=useAuth();
+  if (!ready) return <main className="min-h-dvh bg-slate-950 text-slate-200 p-8" role="status">Opening FitTrack…</main>;
+  if (user ? !user.emailVerified : !guest) return <LoginScreen />;
   return (
-    <FitnessProvider>
+    <FitnessProvider key={user?.uid || 'guest'} accountId={user?.uid} accountName={user?.displayName || ''} accountEmail={user?.email || ''}>
       <DashboardContent />
     </FitnessProvider>
   );
+}
+
+export default function App() {
+  return <AuthProvider><AccountApp /></AuthProvider>;
 }

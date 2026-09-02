@@ -19,6 +19,8 @@ import {
 import confetti from 'canvas-confetti';
 import { useFitness } from '../context/FitnessContext';
 import { GeminiSetup } from './GeminiSetup';
+import { FoodThumbnail } from './FoodThumbnail';
+import { foodCategory } from '../utils/foodCategories';
 import { generateGemini, parseMealResult } from '../utils/gemini';
 import { MealType, FoodItem } from '../types';
 
@@ -75,7 +77,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
   const [customCarbs, setCustomCarbs] = useState<string>('');
   const [customFat, setCustomFat] = useState<string>('');
 
-  const categories = ['All', 'Saved', ...Array.from(new Set(allFoodDatabase.map(food => food.category).filter(Boolean))).sort()];
+  const categories = ['All', 'Saved', ...Array.from(new Set(allFoodDatabase.map(foodCategory))).sort()];
 
   const filteredFoods = allFoodDatabase.filter((food) => {
     const matchesSearch =
@@ -84,7 +86,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
       (food.brand && food.brand.toLowerCase().includes(searchQuery.trim().toLowerCase())) ||
       (food.barcode && food.barcode.includes(searchQuery));
 
-    const matchesCat = categoryFilter === 'All' || (categoryFilter === 'Saved' ? food.source !== 'verified_database' : food.category === categoryFilter);
+    const matchesCat = categoryFilter === 'All' || (categoryFilter === 'Saved' ? food.source !== 'verified_database' : foodCategory(food) === categoryFilter);
     return matchesSearch && matchesCat;
   });
 
@@ -238,7 +240,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
               <option value="snack">Snacks</option>
             </select>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch gap-2">
             <button
               id="btn-trigger-barcode-scanner-from-foodlog"
               type="button"
@@ -252,7 +254,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
               <span>Scan Barcode</span>
             </button>
 
-            <div className="flex-1 flex bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
+            <div className="w-full flex-1 grid grid-cols-3 gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
               <button
                 type="button"
                 onClick={() => {
@@ -320,13 +322,14 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
               </div>
 
               {/* Category Pills */}
-              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <div aria-label="Food categories" className="flex flex-wrap gap-2">
                 {categories.map((cat) => (
                   <button
                     key={cat}
                     type="button"
                     onClick={() => setCategoryFilter(cat)}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                    aria-pressed={categoryFilter === cat}
+                    className={`shrink-0 max-w-full px-3 py-2 rounded-lg text-xs font-semibold whitespace-normal break-words transition-all ${
                       categoryFilter === cat
                         ? 'bg-emerald-500 text-slate-950 font-bold'
                         : 'bg-slate-800 text-slate-400 hover:text-slate-200'
@@ -338,17 +341,21 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
               </div>
 
               {/* Foods List */}
-              <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+              <div className="space-y-2">
                 {filteredFoods.length > 0 ? (
                   filteredFoods.map((food) => (
                     <div
                       key={food.id}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleSelectFood(food); } }}
                       onClick={() => handleSelectFood(food)}
                       className="p-3.5 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-500/50 cursor-pointer transition-all flex items-center justify-between gap-3 group"
                     >
+                      <FoodThumbnail name={food.name} imageUrl={food.imageUrl} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-white truncate">{food.name}</span>
+                          <span className="text-xs font-bold text-white break-words">{food.name}</span>
                           <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
                             {getSourceLabel(food.source, food.brand)}
                           </span>
@@ -361,10 +368,10 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
                         <span className="text-[11px] text-slate-400 block mt-0.5">
                           {food.servingSize} • P:{food.protein}g C:{food.carbs}g F:{food.fat}g
                         </span>
+                        <span className="text-xs font-bold text-emerald-400">{food.calories} kcal</span>
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-xs font-bold text-emerald-400 font-mono">{food.calories} kcal</span>
                         <div className="w-6 h-6 rounded-lg bg-slate-700 text-slate-300 group-hover:bg-emerald-500 group-hover:text-slate-950 flex items-center justify-center transition-colors">
                           <Plus className="w-3.5 h-3.5" />
                         </div>
@@ -390,6 +397,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
                   </div>
                 )}
               </div>
+              <a href="/food-image-credits.html" target="_blank" rel="noreferrer" className="block text-[10px] text-slate-400 underline">Food illustrations: Twemoji · image credits</a>
             </div>
           )}
 
@@ -403,7 +411,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
                   </span>
                   <span className="text-[10px] text-slate-400">Serving size: {selectedFood.servingSize}</span>
                 </div>
-                <h3 className="text-base font-bold text-white">{selectedFood.name}</h3>
+                <div className="flex items-center gap-3"><FoodThumbnail name={selectedFood.name} imageUrl={selectedFood.imageUrl} large /><h3 className="text-base font-bold text-white">{selectedFood.name}</h3></div>
 
                 {/* Macro Breakdown */}
                 <div className="grid grid-cols-4 gap-2 pt-2 text-center">

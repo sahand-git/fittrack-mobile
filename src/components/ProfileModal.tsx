@@ -16,6 +16,7 @@ import {
   Mail
 } from 'lucide-react';
 import { useFitness } from '../context/FitnessContext';
+import { useAuth } from '../context/AuthContext';
 import { Gender, ActivityLevel, FitnessGoal } from '../types';
 import {
   ACTIVITY_MULTIPLIERS,
@@ -31,7 +32,9 @@ interface ProfileModalProps {
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
-  const { profile, updateProfile, resetAccountAndData } = useFitness();
+  const auth = useAuth();
+  const [signOutError, setSignOutError] = useState('');
+  const { profile, updateProfile } = useFitness();
 
   const [name, setName] = useState<string>(profile.name);
   const [email, setEmail] = useState<string>(profile.email);
@@ -47,7 +50,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   );
   const [stepGoal, setStepGoal] = useState<number>(profile.stepGoal);
   const [waterGoalMl, setWaterGoalMl] = useState<number>(profile.waterGoalMl);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
 
   const preview = calculateTargets(gender, weightKg, heightCm, age, activityLevel, goal);
 
@@ -67,12 +69,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       stepGoal: Math.max(1000, stepGoal),
       waterGoalMl: Math.max(1000, waterGoalMl)
     });
-    onClose();
-  };
-
-  const handleLogout = () => {
-    resetAccountAndData();
-    setShowLogoutConfirm(false);
     onClose();
   };
 
@@ -114,6 +110,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
         </div>
 
         <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
+          <div className="p-3 rounded-xl bg-slate-800 text-xs space-y-2">
+            <p className="text-slate-300 break-words">{auth.user ? `Signed in as ${auth.user.email}` : 'Using this device without an account'}</p>
+            <button type="button" className="text-cyan-300 underline" onClick={async()=>{try{await auth.logout();}catch{setSignOutError('Could not sign out. Try again.');}}}>{auth.user ? 'Sign out' : 'Go to sign in'}</button>
+            <p className="text-slate-400">Signing out keeps your fitness records on this device.</p>
+            {signOutError && <p role="alert" className="text-rose-300">{signOutError}</p>}
+          </div>
           {/* Identity & Biological Sex */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

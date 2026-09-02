@@ -2,6 +2,10 @@
 <title>FitTrack health data</title>
 <body style="max-width:42rem;margin:2rem auto;padding:1rem;font:16px/1.6 system-ui">
 <h1>How FitTrack uses step data</h1>
+<h2>Accounts and local records</h2>
+<p>When account login is enabled by the app owner, sign-up and sign-in send your email and password over HTTPS to Google Firebase Authentication. Your name can be saved on your authentication profile. Firebase handles verification and password-reset emails. The app does not save your password. Choosing to remain signed in allows the Firebase SDK to store session credentials on this device. Sign-out clears that session but keeps local fitness records.</p>
+<p>Fitness records remain on this device in separate local storage for each verified account; they are not uploaded by signing in. The offline option uses the original guest records. These local records are not encrypted cloud storage. Gemini and health access require separate consent.</p>
+<p>Gemini connection setup sends your key to Google to list compatible models and generate a short test reply. It sends no fitness logs during that test. Temporary server errors may be retried twice.</p>
 <p>When you choose to connect, FitTrack requests permission to read step counts from Apple Health or Android Health Connect. It does not request permission to write health data.</p>
 <p>FitTrack uses the count for the selected day to display activity and estimate step calories. Reading again replaces the saved daily total instead of adding it twice. It does not read in the background.</p>
 <p>Your profile and logs are saved on this device. Exporting a backup includes your saved logs. Google account cloud sync is not configured in this version. An AI coaching request can also include your day's activity summary.</p>

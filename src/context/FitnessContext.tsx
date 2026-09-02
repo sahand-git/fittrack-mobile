@@ -14,11 +14,7 @@ import { VERIFIED_FOOD_DATABASE } from '../data/foodDatabase';
 import { getTodayDateString } from '../utils/date';
 import { clearGeminiKey } from '../utils/gemini';
 import { exportBackupFile } from '../utils/backup';
-
-const STORAGE_KEY_PROFILE = 'nutrifit_user_profile_v2';
-const STORAGE_KEY_LOGS = 'nutrifit_daily_logs_v2';
-const STORAGE_KEY_CUSTOM_FOODS = 'nutrifit_custom_foods_v2';
-const STORAGE_KEY_WEIGHTS = 'nutrifit_weights_v2';
+import { accountStorageKeys } from '../utils/account';
 
 const DEFAULT_PROFILE: UserProfile = {
   name: '',
@@ -93,7 +89,12 @@ interface FitnessContextType {
 
 const FitnessContext = createContext<FitnessContextType | undefined>(undefined);
 
-export const FitnessProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: string; accountName?: string; accountEmail?: string }> = ({ children, accountId, accountName, accountEmail }) => {
+  const keys = accountStorageKeys(accountId);
+  const STORAGE_KEY_PROFILE = keys.profile;
+  const STORAGE_KEY_LOGS = keys.logs;
+  const STORAGE_KEY_CUSTOM_FOODS = keys.foods;
+  const STORAGE_KEY_WEIGHTS = keys.weights;
   const [profile, setProfile] = useState<UserProfile>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_PROFILE);
@@ -109,7 +110,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (e) {
       console.warn('Error reading profile from localStorage', e);
     }
-    return DEFAULT_PROFILE;
+    return { ...DEFAULT_PROFILE, name: accountName || '', email: accountEmail || '' };
   });
 
   const [dailyLogs, setDailyLogs] = useState<Record<string, DayLog>>(() => {

@@ -1,11 +1,12 @@
-FitTrack 1.2 Android test build
+FitTrack 1.3 Android test build
 
-- Responsive phone header, flexible columns, and dialogs sized to the visible screen.
-- Food picker starts on All with a cleared search each time it opens.
-- 49 additional everyday foods including beef, lamb, fish, beans and bread, sourced from USDA SR28 with per-100g reference values.
-- Native JSON export creates a real file and opens the phone share sheet. Choose a save destination and check the file exists. Backup text can also be viewed and copied.
-- Smart Text, Calculate Macros and Coach use direct Gemini API requests after optional setup with your own Google AI Studio API key and explicit consent. Keys remain only in memory for the session. Gmail entry alone does not authorize Gemini. Google OAuth and cloud sync are not configured.
+- Closing Meals, Workouts, and AI Coach returns to Dashboard.
+- Readable food category rows, grouped everyday foods, and offline food illustrations. Available scanned product photos appear in the picker.
+- Gemini setup loads compatible models from Google and tests a real generation request before showing connected. Temporary server errors retry; access, quota, and model errors show useful details.
+- First-launch sign-in, account creation, verification, password reset, and offline access screens. Real account actions remain disabled until the owner completes Firebase activation. Guest mode remains available and preserves existing local records.
 
-Keep your old app installed if it contains data you need. Older builds have an export bug, and this newly debug-signed APK may not install over them. Do not uninstall an old build unless its data has actually been backed up or you accept losing it. This release cannot repair the export button inside an already installed old APK; USB-assisted recovery may be needed first.
+Firebase console activation is currently blocked by the owner's Google two-step verification requirement. The authentication implementation was checked with mocked Firebase responses, not a live project. Personal Gemini access also requires the user's key and successful connection test; no key is included in the app.
 
-Android 9+ required. Health Connect availability varies by device. This is a test APK, not a Google Play release. Native file sharing and health access still need confirmation on physical phones. Browser checks cover 320, 360 and 390 pixel widths; AI requests were tested with mocked responses, not a live personal API key. iPhone installation still requires a signed TestFlight build.
+23 unit tests and phone browser checks at 320, 360, and 390 pixels passed. Physical-phone health, file sharing, and live authentication checks remain necessary.
+
+Keep the old app installed if it contains data you need. Debug signing keys can differ between builds, preventing an in-place update. Do not uninstall without a verified backup. Android 9+ required. This is a test APK; iPhone installation requires a separately signed TestFlight build.
