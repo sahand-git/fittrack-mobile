@@ -1,0 +1,6 @@
+{
+  "name": "NutriFit AI & Barcode Calorie Tracker",
+  "description": "Smart nutrition and fitness tracker with live camera barcode scanner, Open Food Facts integration, phone step counter, Mifflin-St Jeor macro calculator, Gmail sync, and Gemini AI daily health coach.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

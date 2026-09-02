@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Keep the step tracker's header and footer inside the visible screen. */
+.step-tracker-panel {
+  max-height: min(80vh, 640px);
+  max-height: min(80dvh, 640px);
+}

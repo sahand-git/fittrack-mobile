@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>NutriFit AI & Barcode Calorie Tracker</title>
+    <meta name="description" content="Smart nutrition and fitness tracker with live camera barcode scanner, Open Food Facts integration, phone step counter, Mifflin-St Jeor macro calculator, Gmail sync, and Gemini AI daily health coach." />
+    <meta property="og:title" content="NutriFit AI & Barcode Calorie Tracker" />
+    <meta property="og:description" content="Smart nutrition and fitness tracker with live camera barcode scanner, Open Food Facts integration, phone step counter, Mifflin-St Jeor macro calculator, Gmail sync, and Gemini AI daily health coach." />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#090d16" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="NutriFit PRO" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    <script>
+      (function() {
+        var fn = function(tab) {
+          try {
+            if (typeof window !== 'undefined') {
+              window.activeTab = tab;
+              if (typeof window.__handleSetActiveTab === 'function') {
+                window.__handleSetActiveTab(tab);
+              }
+            }
+          } catch (e) {
+            console.error('setActiveTab error:', e);
+          }
+        };
+        window.setActiveTab = fn;
+        if (typeof globalThis !== 'undefined') {
+          globalThis.setActiveTab = fn;
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-white min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', () => {
+          if (window.Capacitor && window.Capacitor.isNativePlatform()) return;
+          navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.log('SW registration note:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
