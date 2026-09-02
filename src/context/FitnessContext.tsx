@@ -12,6 +12,8 @@ import {
 import { calculateTargets, calculateStepCalories } from '../utils/calculator';
 import { VERIFIED_FOOD_DATABASE } from '../data/foodDatabase';
 import { getTodayDateString } from '../utils/date';
+import { clearGeminiKey } from '../utils/gemini';
+import { exportBackupFile } from '../utils/backup';
 
 const STORAGE_KEY_PROFILE = 'nutrifit_user_profile_v2';
 const STORAGE_KEY_LOGS = 'nutrifit_daily_logs_v2';
@@ -84,7 +86,8 @@ interface FitnessContextType {
   disconnectGoogleAccount: () => void;
   resetAccountAndData: () => void;
   syncWithCloud: () => Promise<void>;
-  exportBackupJSON: () => void;
+  exportBackupJSON: () => Promise<'share' | 'download'>;
+  getBackupJSON: () => string;
   importBackupJSON: (jsonStr: string) => boolean;
 }
 
@@ -150,25 +153,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
-  // Initial cloud restore on mount only if user already has an active profile email
-  useEffect(() => {
-    const emailToUse = profile.email?.trim();
-    if (!emailToUse || !profile.profileCompleted || !profile.isGoogleConnected) return;
-
-    fetch(`/api/sync/load?email=${encodeURIComponent(emailToUse)}`)
-      .then(res => res.json())
-      .then(result => {
-        if (result && result.found && result.data) {
-          const { profile: rProfile, dailyLogs: rLogs, customFoods: rFoods, weightHistory: rWeights } = result.data;
-          if (rProfile) setProfile(prev => ({ ...prev, ...rProfile, isGoogleConnected: true }));
-          if (rLogs) setDailyLogs(prev => ({ ...prev, ...rLogs }));
-          if (rFoods && Array.isArray(rFoods) && rFoods.length > 0) setCustomFoods(rFoods);
-          if (rWeights && Array.isArray(rWeights) && rWeights.length > 0) setWeightHistory(rWeights);
-          setLastSyncedAt(new Date().toISOString());
-        }
-      })
-      .catch(err => console.warn('Could not load remote cloud profile', err));
-  }, []);
+  useEffect(() => { clearGeminiKey(); }, [profile.email]);
 
   // Synchronize localStorage whenever states update
   useEffect(() => {
@@ -209,87 +194,10 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Active day's log object
   const todayLog = dailyLogs[currentDate] || createEmptyDayLog(currentDate);
 
-  // Cloud Sync Handler
-  const syncWithCloud = useCallback(async () => {
-    if (!profile.email) return;
-    setIsSyncing(true);
-    try {
-      const res = await fetch('/api/sync/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: profile.email,
-          profile,
-          dailyLogs,
-          customFoods,
-          weightHistory
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setLastSyncedAt(data.syncedAt || new Date().toISOString());
-      }
-    } catch (err) {
-      console.error('Cloud sync error:', err);
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [profile, dailyLogs, customFoods, weightHistory]);
-
-  const connectGoogleAccount = async (email: string, name?: string): Promise<boolean> => {
-    if (!email || !email.includes('@')) return false;
-    setIsSyncing(true);
-    try {
-      // First try to load existing cloud backup if any
-      const res = await fetch(`/api/sync/load?email=${encodeURIComponent(email)}`);
-      if (res.ok) {
-        const result = await res.json();
-        if (result.found && result.data) {
-          const { profile: rProfile, dailyLogs: rLogs, customFoods: rFoods, weightHistory: rWeights } = result.data;
-          if (rProfile) setProfile({ ...rProfile, isGoogleConnected: true, email });
-          if (rLogs) setDailyLogs(rLogs);
-          if (rFoods) setCustomFoods(rFoods);
-          if (rWeights) setWeightHistory(rWeights);
-          setLastSyncedAt(new Date().toISOString());
-          setIsSyncing(false);
-          return true;
-        }
-      }
-
-      // If no remote backup exists yet, save current local state to cloud under this email
-      const updatedProfile = {
-        ...profile,
-        email,
-        name: name || profile.name || email.split('@')[0],
-        isGoogleConnected: true
-      };
-      setProfile(updatedProfile);
-
-      await fetch('/api/sync/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          profile: updatedProfile,
-          dailyLogs,
-          customFoods,
-          weightHistory
-        })
-      });
-      setLastSyncedAt(new Date().toISOString());
-      return true;
-    } catch (e) {
-      console.error('Error connecting Google account:', e);
-      setProfile(prev => ({ ...prev, email, isGoogleConnected: true }));
-      return true;
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const disconnectGoogleAccount = () => {
-    setProfile(prev => ({ ...prev, isGoogleConnected: false }));
-  };
+  // Gmail OAuth and a persistent authenticated backend are not configured.
+  const syncWithCloud = async () => {};
+  const connectGoogleAccount = async (_email: string, _name?: string) => false;
+  const disconnectGoogleAccount = () => { clearGeminiKey(); setProfile(prev => ({ ...prev, isGoogleConnected: false })); };
 
   const resetAccountAndData = () => {
     try {
@@ -529,7 +437,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
-  const exportBackupJSON = () => {
+  const getBackupJSON = () => {
     const data = {
       version: '2.0',
       exportedAt: new Date().toISOString(),
@@ -538,14 +446,9 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode }> = ({ child
       customFoods,
       weightHistory
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `nutrifit_backup_${profile.name || 'user'}_${getTodayDateString()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    return JSON.stringify(data, null, 2);
   };
+  const exportBackupJSON = () => exportBackupFile(getBackupJSON());
 
   const importBackupJSON = (jsonStr: string): boolean => {
     try {
@@ -593,6 +496,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode }> = ({ child
         resetAccountAndData,
         syncWithCloud,
         exportBackupJSON,
+        getBackupJSON,
         importBackupJSON
       }}
     >

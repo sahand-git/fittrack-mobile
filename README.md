@@ -1,25 +1,29 @@
 # FitTrack Mobile
 
-Meal, workout, weight and step tracking with first-launch profile setup. Android uses Health Connect; iPhone uses Apple Health. Health reading requires a native build and the user's permission.
+Meal, workout, weight and step tracking with first-launch profile setup. Android uses Health Connect; iPhone uses Apple Health. Reading health data requires a native build and permission.
 
-## Install on Android
+## Android test download
 
-Open [Releases](https://github.com/sahand-git/fittrack-mobile/releases), select the newest Android test build, and download **FitTrack.apk** on your phone. The automated build publishes an APK after successful checks and compilation.
+Get FitTrack.apk from [Releases](https://github.com/sahand-git/fittrack-mobile/releases). Android 9+ is required. Keep an older installation if it contains data you need: older exports are broken and changing debug signing keys can prevent an in-place update. Do not uninstall without a confirmed backup. Stable release signing still needs configuration.
 
-These are debug-signed test builds for Android 9+. Native health behavior still needs testing on real phones. AI and email backup require a deployed backend; the bundled test APK contains local tracking and native integrations only.
+## Version 1.2
 
-## Barcode lookup and saved products
+Phone layouts wrap at narrow widths and dialogs use dynamic viewport height. Each food-picker opening resets to All. The library includes 49 additional foods from USDA SR28 (revised May 2016), with NDB source identifiers and nutrient values per 100g edible portion. Prepared dishes vary by recipe.
 
-New barcodes are looked up directly over HTTPS using native HTTP on Android/iOS and browser fetch on the web. Found products automatically save on the device and become searchable by name, brand or barcode; the Saved filter narrows the list. Re-scanning a saved barcode works offline. A scan does not automatically log a meal. Products with incomplete nutrition need values entered from their package label. No private app server is needed for barcode lookup.
+New barcode lookups contact Open Food Facts directly. Found products save on the device and become searchable by name, brand or barcode. Saved barcodes work offline. A scan does not log a meal until confirmed.
 
-Before replacing an older debug-signed APK, export your local data using **Sync Gmail → Export JSON**. If an installation requires uninstalling the old build, restore the exported file using **Import Backup** afterward.
+Backup & Gemini contains JSON export/import. Native export writes a UTF-8 file to the app cache and opens the share sheet. Save it to a destination you control and verify it there. Opening or canceling the sheet does not prove it is saved. The web version downloads a JSON file; View / copy backup text is a fallback.
 
-## Install on iPhone
+## Gemini
 
-The iOS project is included. An installable TestFlight release requires your Apple Developer signing configuration and an App Store Connect upload. A successful unsigned compilation check alone does not produce an installable iPhone app.
+Smart Text, Calculate Macros and AI Coach use direct Gemini API requests. Each user may supply their own [Google AI Studio API key](https://aistudio.google.com/apikey), accept the data-sharing notice, and enable it for the session. The key is held only in memory, never bundled, persisted, or exported. The user's API quota and billing apply. Disconnect clears it. This is optional API-key setup, not Google OAuth; typing a Gmail address or owning a Gemini chat subscription does not authorize API access. Google sign-in and authenticated cloud storage remain unconfigured; the insecure email-only prototype sync is disabled.
 
-## Develop
+AI estimates need portion review. Gemini requests were verified with mock responses; a live personal key and device checks remain necessary.
 
-Use Node.js 24. Run `npm ci`, `npm run lint`, and `npm test`. For the web app, set `GEMINI_API_KEY` in `.env` on your server and run `npm run dev`. Keep keys out of the frontend and repository.
+## iPhone
 
-Run `npm run mobile:sync` to refresh native projects, then `npm run mobile:android` or `npm run mobile:ios`. See [MOBILE-SETUP.md](MOBILE-SETUP.md) for health permissions, backend configuration, and remaining physical-device checks.
+The iOS project is included. TestFlight needs Apple Developer signing and an App Store Connect upload. An unsigned compilation check does not produce an installable iPhone app.
+
+## Development
+
+Use Node.js 24: npm ci, npm run lint, npm test, npm run dev. Build web assets with npx vite build and run npx cap sync to refresh native projects. Never commit private keys or signing files. See MOBILE-SETUP.md for native health setup.

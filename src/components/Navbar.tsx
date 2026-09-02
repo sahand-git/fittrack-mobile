@@ -50,7 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-30 bg-slate-950/85 backdrop-blur-md border-b border-slate-800">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         {/* Brand & Logo */}
         <div className="flex items-center gap-2.5">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-lg shadow-emerald-500/20 shrink-0">
@@ -72,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Date Navigator */}
-        <div className="flex items-center bg-slate-900 border border-slate-800 rounded-2xl p-1 shadow-inner">
+        <div className="order-3 w-full sm:order-none sm:w-auto flex items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-1 shadow-inner">
           <button
             onClick={handlePrevDay}
             className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
@@ -131,11 +131,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
                 : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
             }`}
-            title="Google / Gmail Cloud Sync"
+            title="Backup & Gemini setup"
           >
             <Cloud className="w-3.5 h-3.5 text-blue-400" />
             <span className="hidden lg:inline">
-              {profile.isGoogleConnected ? 'Gmail Synced' : 'Sync Gmail'}
+              Backup & AI
             </span>
           </button>
 

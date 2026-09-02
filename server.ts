@@ -11,6 +11,11 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
+// The old email-only prototype is not authentication. Do not accept or expose backups through it.
+app.use('/api/sync', (_req, res) => {
+  res.status(503).json({ error: 'Google OAuth and authenticated cloud storage are not configured. Use a local JSON backup.' });
+});
+
 // In-memory + file-backed persistent cache for synced user profiles & cloud backup by email
 const cloudUserStorage = new Map<string, { profile: any; dailyLogs: any; customFoods: any; weightHistory: any; updatedAt: string }>();
 const customBarcodeRegistry = new Map<string, any>();

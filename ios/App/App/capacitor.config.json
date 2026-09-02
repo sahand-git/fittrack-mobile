@@ -1,0 +1,10 @@
+{
+	"appId": "com.sahand.fitness",
+	"appName": "FitTrack",
+	"webDir": "dist",
+	"packageClassList": [
+		"FilesystemPlugin",
+		"SharePlugin",
+		"HealthPlugin"
+	]
+}

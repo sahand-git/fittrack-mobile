@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+html, body, #root { width: 100%; min-width: 0; margin: 0; }
+input, select, textarea { min-width: 0; max-width: 100%; }
+img, video, canvas { max-width: 100%; }
+.flex > *, .grid > * { min-width: 0; }
+p, h1, h2, h3, label { overflow-wrap: anywhere; }
+
+/* Keep native system bars clear of interactive content. */
+header { padding-top: env(safe-area-inset-top); }
+.fixed.bottom-0 { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+.fixed.inset-0 { padding-top: max(0.75rem, env(safe-area-inset-top)); padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+@media (max-width: 639px) {
+  .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* Keep the step tracker's header and footer inside the visible screen. */
 .step-tracker-panel {
   max-height: min(80vh, 640px);

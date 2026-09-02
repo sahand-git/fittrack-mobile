@@ -18,6 +18,8 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { useFitness } from '../context/FitnessContext';
+import { GeminiSetup } from './GeminiSetup';
+import { generateGemini, parseCoachResult } from '../utils/gemini';
 import { AICoachReport } from '../types';
 
 interface AICoachModalProps {
@@ -38,7 +40,7 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
     {
       role: 'assistant',
-      text: `Hello ${profile.name || 'there'}! I'm your Gemini AI Sports Nutritionist & Habit Coach. Ask me anything about your meals, macronutrient splits, pre/post workout fuel, or healthy recipes!`
+      text: `Hello ${profile.name || 'there'}! I'm your AI fitness assistant. Set up Gemini to ask questions. Ask me anything about your meals, macronutrient splits, pre/post workout fuel, or healthy recipes!`
     }
   ]);
   const [chatInput, setChatInput] = useState<string>('');
@@ -65,7 +67,7 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
 
     try {
       const payload = {
-        profile,
+        profile: { age: profile.age, gender: profile.gender, heightCm: profile.heightCm, weightKg: profile.weightKg, targetWeightKg: profile.targetWeightKg, goal: profile.goal, activityLevel: profile.activityLevel },
         todayLog: {
           totalCalories,
           totalProtein,
@@ -85,25 +87,14 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
         }
       };
 
-      const res = await fetch('/api/ai-coach', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success && data.report) {
-        const generatedReport: AICoachReport = {
-          ...data.report,
-          generatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        saveDayAIReport(generatedReport);
-      } else {
-        setAuditError(data.error || 'Could not generate report. Please check API key configuration.');
-      }
+      const text = await generateGemini(`You are an AI fitness assistant, not a medical professional. Give balanced general nutrition feedback using only the supplied log; do not invent meals or diagnose conditions. Respect uncertainty and do not recommend extreme restriction. Return JSON with string fields overallGrade, headline, caloricBalance, macroBreakdown, customMealSuggestion, coachNote and string arrays mistakesAndBlindSpots, actionableTomorrowFixes. If the log is sparse, say so. Data: ${JSON.stringify(payload)}`, true);
+      const generatedReport: AICoachReport = {
+        ...parseCoachResult(text),
+        generatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      saveDayAIReport(generatedReport);
     } catch (err: any) {
-      console.error('Audit error:', err);
-      setAuditError('Failed to contact AI Coach server. ' + err.message);
+      setAuditError(err instanceof Error ? err.message : 'Could not generate your report.');
     } finally {
       setIsLoadingAudit(false);
     }
@@ -119,32 +110,12 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
     setIsChatSending(true);
 
     try {
-      const prompt = `User query: "${userText}"
-Context:
-- User: ${profile.name || 'User'}, Goal: ${profile.goal}, Target Calories: ${profile.targetCalories} kcal.
-- Consumed today so far: ${totalCalories} kcal (${totalProtein}g protein, ${totalCarbs}g carbs, ${totalFat}g fat).
-- Steps: ${todayLog.steps} steps.
-
-Provide a friendly, certified sports nutritionist response. Keep it actionable and concise.`;
-
-      const res = await fetch('/api/ai-parse-meal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: userText })
-      });
-
-      // Simple response fallback or direct answer
-      const resText = `Based on your goal of ${profile.goal.replace(/_/g, ' ')} and current daily intake (${totalProtein}g protein / ${profile.targetProtein}g target), here is the coaching advice:
-• Focus on hitting at least 25-35g protein in your next meal to maintain muscle protein synthesis.
-• Hydration is at ${todayLog.waterMl}ml / ${profile.waterGoalMl}ml. Drink a glass of water with your next snack.
-• Keep moving to reach your ${profile.stepGoal} steps!`;
-
-      setChatMessages((prev) => [...prev, { role: 'assistant', text: resText }]);
+      const context = { goal: profile.goal, targetCalories: profile.targetCalories, targetProtein: profile.targetProtein, totalCalories, totalProtein, totalCarbs, totalFat, steps: todayLog.steps, waterMl: todayLog.waterMl };
+      const history = [...chatMessages.filter(m => m.role === 'user' || !m.text.startsWith('Hello ')), { role: 'user', text: userText }].slice(-12);
+      const reply = await generateGemini(`You are an AI fitness assistant, not a medical professional. Give concise, balanced general fitness advice. Do not diagnose or recommend extreme restriction. Context: ${JSON.stringify(context)}. Conversation: ${JSON.stringify(history)}. Answer the last user message.`);
+      setChatMessages(prev => [...prev, { role: 'assistant', text: reply }]);
     } catch (err) {
-      setChatMessages((prev) => [
-        ...prev,
-        { role: 'assistant', text: 'I encountered an error answering. Please try again in a moment.' }
-      ]);
+      setChatMessages(prev => [...prev, { role: 'assistant', text: err instanceof Error ? err.message : 'Could not contact Gemini. Try again.' }]);
     } finally {
       setIsChatSending(false);
     }
@@ -164,7 +135,7 @@ Provide a friendly, certified sports nutritionist response. Keep it actionable a
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[88vh]"
+        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[88dvh]"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header */}
@@ -226,6 +197,7 @@ Provide a friendly, certified sports nutritionist response. Keep it actionable a
 
         {/* Modal Body */}
         <div className="p-5 md:p-6 overflow-y-auto flex-1 space-y-5">
+          <GeminiSetup />
           {activeTab === 'audit' ? (
             <div className="space-y-5">
               {/* Audit Trigger Card */}
