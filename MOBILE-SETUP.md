@@ -1,6 +1,6 @@
 # FitTrack: first-visit setup and mobile health access
 
-This source update fixes onboarding and replaces the preset-step “Sync” buttons with a native health reader. It includes Android and iOS projects. It does **not** include a signed APK or an installable iPhone build.
+This source update fixes onboarding and replaces the preset-step “Sync” buttons with a native health reader. It includes Android and iOS projects. A debug-signed Android test APK is available in the [GitHub release](https://github.com/sahand-git/fittrack-mobile/releases/tag/android-1). An installable iPhone build still requires Apple signing and TestFlight publication.
 
 ## What is ready
 
@@ -62,7 +62,9 @@ The starter application identifier is `com.sahand.fitness`. Confirm it is the id
 
 Completed here: TypeScript check, frontend production build, six health-reader logic tests, native plugin sync for both platforms, and browser checks for first launch, validation, one-time legacy-profile review, saved-profile reload, retained logs, manual step entry, and denied motion access.
 
-The health-reader tests simulate SDK responses; they are not physical-device integration tests. Android compilation, Xcode compilation, signing, real permission prompts, native step totals, and app-store review have not been verified here. This Windows workspace has no Android SDK or Xcode.
+GitHub Actions subsequently completed Android compilation and APK publication, and the unsigned iPhone Release compilation passed on macOS. The downloaded APK's SHA-256 matches the published asset digest. Android uses a debug test signature; production signing and TestFlight publication remain pending.
+
+The health-reader tests simulate SDK responses; they are not physical-device integration tests. Real permission prompts, native step totals, and app-store review have not been verified. Compilation ran on GitHub-hosted machines because this Windows workspace has no Android SDK or Xcode.
 
 Before distributing, test both phones with known daily totals, denied/revoked permission, zero/no readable steps, repeated reads, and midnight/timezone boundaries. Review the included health-data explanation (`public/privacypolicy.html`) against your deployed server's actual data handling. The existing email-backup feature is separate from Google OAuth or health authorization.
 
