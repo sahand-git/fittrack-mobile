@@ -64,15 +64,15 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
   const [customCarbs, setCustomCarbs] = useState<string>('');
   const [customFat, setCustomFat] = useState<string>('');
 
-  const categories = ['All', 'Protein', 'Grains', 'Produce', 'Dairy', 'Supplements', 'Snacks', 'Beverages'];
+  const categories = ['All', 'Saved', 'Protein', 'Grains', 'Produce', 'Dairy', 'Supplements', 'Snacks', 'Beverages'];
 
   const filteredFoods = allFoodDatabase.filter((food) => {
     const matchesSearch =
-      food.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (food.brand && food.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      food.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+      (food.brand && food.brand.toLowerCase().includes(searchQuery.trim().toLowerCase())) ||
       (food.barcode && food.barcode.includes(searchQuery));
 
-    const matchesCat = categoryFilter === 'All' || food.category === categoryFilter;
+    const matchesCat = categoryFilter === 'All' || (categoryFilter === 'Saved' ? food.source !== 'verified_database' : food.category === categoryFilter);
     return matchesSearch && matchesCat;
   });
 
@@ -204,7 +204,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <span>Log Food Intake</span>
               </h2>
-              <p className="text-xs text-slate-400">USDA database, barcode scanner & AI meal logger</p>
+              <p className="text-xs text-slate-400">Food database, saved scans & meal logger</p>
             </div>
           </div>
           <button

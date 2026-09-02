@@ -28,7 +28,7 @@ npx cap sync
 
 ## Connect the mobile app to your deployed server
 
-The existing AI, barcode lookup, and email-backup endpoints require the Express server. A bundled native app cannot run `server.ts` itself. Local tracking and native health reads work with bundled assets; the existing server features require your deployed HTTPS app.
+The existing AI and email-backup endpoints require the Express server. A bundled native app cannot run `server.ts` itself. Local tracking and native health reads work with bundled assets; the existing server features require your deployed HTTPS app.
 
 Before syncing a connected mobile build, set `CAPACITOR_SERVER_URL` to **your actual trusted HTTPS deployment URL**, not the GitHub repository URL. This loads your deployed app inside the native container so its existing same-origin API calls work. Deploy this version of the frontend there as well.
 

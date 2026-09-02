@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   UserProfile,
   DayLog,
@@ -132,6 +132,9 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     return [];
   });
+
+  const customFoodsRef = useRef(customFoods);
+  customFoodsRef.current = customFoods;
 
   const [weightHistory, setWeightHistory] = useState<WeightEntry[]>(() => {
     try {
@@ -413,25 +416,15 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: 'custom_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       source: foodData.source || 'custom'
     };
-    setCustomFoods(prev => [newFood, ...prev.filter(f => f.barcode && newFood.barcode ? f.barcode !== newFood.barcode : f.name !== newFood.name)]);
-
-    // If item has a barcode, register with server-side database
-    if (newFood.barcode) {
-      fetch('/api/barcode/custom', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          barcode: newFood.barcode,
-          name: newFood.name,
-          brand: newFood.brand,
-          calories: newFood.calories,
-          protein: newFood.protein,
-          carbs: newFood.carbs,
-          fat: newFood.fat,
-          servingGrams: newFood.servingGrams || 100
-        })
-      }).catch(err => console.warn('Could not sync custom barcode to server', err));
+    const next = [newFood, ...customFoodsRef.current.filter(f =>
+      f.barcode && newFood.barcode ? f.barcode !== newFood.barcode : f.name !== newFood.name)];
+    try {
+      localStorage.setItem(STORAGE_KEY_CUSTOM_FOODS, JSON.stringify(next));
+    } catch {
+      throw new Error('Could not save this food on your phone. Free some storage space and try again.');
     }
+    customFoodsRef.current = next;
+    setCustomFoods(next);
 
     return newFood;
   };

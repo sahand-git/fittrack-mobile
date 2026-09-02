@@ -22,6 +22,7 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import confetti from 'canvas-confetti';
 import { useFitness } from '../context/FitnessContext';
 import { MealType, FoodItem } from '../types';
+import { lookupBarcode } from '../utils/barcode';
 
 interface BarcodeScannerModalProps {
   isOpen: boolean;
@@ -39,19 +40,34 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   targetMeal = 'lunch'
 }) => {
   const effectiveMeal = defaultMealType || targetMeal || 'lunch';
-  const { logFood, addCustomFood } = useFitness();
+  const { logFood, addCustomFood, customFoods } = useFitness();
 
   const [scanMode, setScanMode] = useState<'camera' | 'upload' | 'manual'>('camera');
   const [manualCode, setManualCode] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [scannedProduct, setScannedProduct] = useState<any | null>(null);
+  const [scannedProduct, setScannedProduct] = useState<FoodItem | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
 
   // Logging parameters
   const [selectedMeal, setSelectedMeal] = useState<MealType>(effectiveMeal);
   const [servingsCount, setServingsCount] = useState<number>(1);
-  const [servingGrams, setServingGrams] = useState<number>(100);
+  const lookupBusy = useRef(false);
+  const openRef = useRef(isOpen);
+  openRef.current = isOpen;
+  const requestId = useRef(0);
+  const lookupHandler = useRef<(code: string) => Promise<void>>(async () => {});
+
+  useEffect(() => {
+    requestId.current += 1;
+    lookupBusy.current = false;
+    setIsSearching(false);
+    setScannedProduct(null);
+    setErrorMessage(null);
+    setManualCode('');
+    setScanMode('camera');
+    return () => { requestId.current += 1; };
+  }, [isOpen]);
 
   // Camera scanner reference
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -71,6 +87,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
     }
 
     let timeoutId: NodeJS.Timeout;
+    let cancelled = false;
 
     const startScanner = async () => {
       try {
@@ -113,16 +130,22 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
           config,
           (decodedText) => {
             // Found barcode!
-            handleBarcodeFound(decodedText);
+            void lookupHandler.current(decodedText);
           },
           () => {
             // Scanning in progress
           }
         );
 
+        if (cancelled) {
+          if (html5QrCode.isScanning) await html5QrCode.stop();
+          html5QrCode.clear();
+          return;
+        }
         isScannerRunningRef.current = true;
         setCameraActive(true);
       } catch (err: any) {
+        if (cancelled) return;
         console.warn('Camera barcode start error:', err);
         setCameraActive(false);
         setErrorMessage('Camera access unavailable or blocked. You can upload a photo of the barcode or enter the number below.');
@@ -132,6 +155,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
     timeoutId = setTimeout(startScanner, 150);
 
     return () => {
+      cancelled = true;
       clearTimeout(timeoutId);
       stopCamera();
     };
@@ -151,36 +175,33 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   };
 
   const handleBarcodeFound = async (barcode: string) => {
-    if (isSearching) return;
+    // Camera callbacks can fire several times before React re-renders.
+    if (lookupBusy.current || !openRef.current) return;
+    lookupBusy.current = true;
+    const id = ++requestId.current;
     setIsSearching(true);
     setErrorMessage(null);
-    stopCamera();
-
+    await stopCamera();
     try {
-      // Fetch Open Food Facts via backend proxy
-      const res = await fetch(`/api/barcode/${encodeURIComponent(barcode.trim())}`);
-      const data = await res.json();
-
-      if (res.ok && data.success && data.product) {
-        const p = data.product;
-        setScannedProduct(p);
-        setServingGrams(p.servingGrams || 100);
-        setServingsCount(1);
-        if (navigator.vibrate) {
-          navigator.vibrate([40, 60, 40]);
-        }
-      } else {
-        setErrorMessage(data.error || `Barcode ${barcode} not found in the verified database. You can add it manually.`);
-        setManualCode(barcode);
-        setScanMode('manual');
-      }
-    } catch (err: any) {
-      console.error('Barcode lookup error:', err);
-      setErrorMessage('Network error contacting food database. Please check your connection.');
+      const food = await lookupBarcode(barcode, customFoods);
+      if (id !== requestId.current) return;
+      const saved = addCustomFood(food);
+      setScannedProduct(saved);
+      setServingsCount(1);
+      navigator.vibrate?.([40, 60, 40]);
+    } catch (error) {
+      if (id !== requestId.current) return;
+      setErrorMessage(error instanceof Error ? error.message : 'Could not look up this barcode. Please try again.');
+      setManualCode(barcode);
+      setScanMode('manual');
     } finally {
-      setIsSearching(false);
+      if (id === requestId.current) {
+        lookupBusy.current = false;
+        setIsSearching(false);
+      }
     }
   };
+  lookupHandler.current = handleBarcodeFound;
 
   const handleManualSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +223,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
       const scanResult = await html5QrCode.scanFileV2(file, true);
 
       if (scanResult && scanResult.decodedText) {
-        handleBarcodeFound(scanResult.decodedText);
+        await handleBarcodeFound(scanResult.decodedText);
       } else {
         setErrorMessage('No barcode recognized in the image. Please ensure the barcode is sharp, well-lit, and unblurred.');
       }
@@ -217,30 +238,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   const handleLogScannedProduct = () => {
     if (!scannedProduct) return;
 
-    const foodItem: FoodItem = {
-      id: 'food_bc_' + scannedProduct.barcode + '_' + Date.now(),
-      name: scannedProduct.name,
-      brand: scannedProduct.brand,
-      barcode: scannedProduct.barcode,
-      servingSize: scannedProduct.servingSize || `${scannedProduct.servingGrams}g`,
-      servingGrams: scannedProduct.servingGrams || 100,
-      calories: scannedProduct.caloriesPerServing || scannedProduct.caloriesPer100,
-      protein: scannedProduct.proteinPerServing || scannedProduct.proteinPer100,
-      carbs: scannedProduct.carbsPerServing || scannedProduct.carbsPer100,
-      fat: scannedProduct.fatPerServing || scannedProduct.fatPer100,
-      fiber: scannedProduct.fiberPer100,
-      sugars: scannedProduct.sugarsPer100,
-      sodium: scannedProduct.sodiumPer100,
-      nutriScore: scannedProduct.nutriScore,
-      imageUrl: scannedProduct.imageUrl,
-      source: 'open_food_facts'
-    };
-
-    // Save to custom/scanned foods library for quick reuse
-    addCustomFood(foodItem);
-
-    // Log to active day
-    logFood(selectedMeal, foodItem, servingsCount);
+    logFood(selectedMeal, scannedProduct, servingsCount);
 
     // Confetti celebration
     try {
@@ -439,7 +437,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                   />
                   <button
                     type="submit"
-                    disabled={!manualCode.trim() || isSearching}
+                    disabled={!manualCode.trim() || isSearching || isUploadingImage}
                     className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
                   >
                     {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Search'}
@@ -494,6 +492,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
+              <p role="status" className="text-xs text-emerald-300 flex items-center gap-2"><Check className="w-4 h-4 shrink-0" />Saved on this phone. Find it anytime by name, brand, or barcode in Food Search.</p>
               {/* Product Header Card */}
               <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-2xl flex gap-4">
                 {scannedProduct.imageUrl ? (
@@ -532,7 +531,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                       </span>
                     )}
                     <span className="text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      Ref: Open Food Facts
+                      {scannedProduct.source === 'open_food_facts' ? 'Ref: Open Food Facts' : 'Saved food'}
                     </span>
                   </div>
                   <h3 className="text-sm font-bold text-white truncate mt-0.5">{scannedProduct.name}</h3>
@@ -549,7 +548,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
                   <span className="text-[10px] text-emerald-400 uppercase font-semibold block">Calories</span>
                   <span className="text-base font-extrabold text-white mt-0.5 block">
-                    {Math.round((scannedProduct.caloriesPerServing || scannedProduct.caloriesPer100) * servingsCount)}
+                    {Math.round(scannedProduct.calories * servingsCount)}
                   </span>
                   <span className="text-[9px] text-slate-400">kcal</span>
                 </div>
@@ -557,7 +556,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                 <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-center">
                   <span className="text-[10px] text-rose-400 uppercase font-semibold block">Protein</span>
                   <span className="text-base font-extrabold text-white mt-0.5 block">
-                    {Math.round(((scannedProduct.proteinPerServing || scannedProduct.proteinPer100) * servingsCount) * 10) / 10}g
+                    {Math.round((scannedProduct.protein * servingsCount) * 10) / 10}g
                   </span>
                   <span className="text-[9px] text-slate-400">macros</span>
                 </div>
@@ -565,7 +564,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                 <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-center">
                   <span className="text-[10px] text-amber-400 uppercase font-semibold block">Carbs</span>
                   <span className="text-base font-extrabold text-white mt-0.5 block">
-                    {Math.round(((scannedProduct.carbsPerServing || scannedProduct.carbsPer100) * servingsCount) * 10) / 10}g
+                    {Math.round((scannedProduct.carbs * servingsCount) * 10) / 10}g
                   </span>
                   <span className="text-[9px] text-slate-400">macros</span>
                 </div>
@@ -573,12 +572,13 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                 <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-center">
                   <span className="text-[10px] text-blue-400 uppercase font-semibold block">Fat</span>
                   <span className="text-base font-extrabold text-white mt-0.5 block">
-                    {Math.round(((scannedProduct.fatPerServing || scannedProduct.fatPer100) * servingsCount) * 10) / 10}g
+                    {Math.round((scannedProduct.fat * servingsCount) * 10) / 10}g
                   </span>
                   <span className="text-[9px] text-slate-400">macros</span>
                 </div>
               </div>
 
+              {scannedProduct.ingredients && <p className="text-xs text-slate-400"><span className="font-semibold text-slate-300">Ingredients: </span>{scannedProduct.ingredients}</p>}
               {/* Servings Adjuster & Meal Selector */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
