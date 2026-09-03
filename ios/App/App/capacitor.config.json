@@ -2,7 +2,33 @@
 	"appId": "com.sahand.fitness",
 	"appName": "FitTrack",
 	"webDir": "dist",
+	"plugins": {
+		"FirebaseAuthentication": {
+			"skipNativeAuth": true,
+			"providers": [
+				"google.com"
+			]
+		}
+	},
+	"experimental": {
+		"ios": {
+			"spm": {
+				"swiftToolsVersion": "6.1",
+				"packageOptions": {
+					"@capacitor-firebase/authentication": {
+						"symlink": true
+					}
+				},
+				"packageTraits": {
+					"@capacitor-firebase/authentication": [
+						"Google"
+					]
+				}
+			}
+		}
+	},
 	"packageClassList": [
+		"FirebaseAuthenticationPlugin",
 		"FilesystemPlugin",
 		"SharePlugin",
 		"HealthPlugin"

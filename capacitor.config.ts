@@ -9,9 +9,14 @@ const config: CapacitorConfig = {
   appId: 'com.sahand.fitness',
   appName: 'FitTrack',
   webDir: 'dist',
+  plugins: { FirebaseAuthentication: { skipNativeAuth: true, providers: ['google.com'] } },
+  experimental: { ios: { spm: {
+    swiftToolsVersion: '6.1',
+    packageOptions: { '@capacitor-firebase/authentication': { symlink: true } },
+    packageTraits: { '@capacitor-firebase/authentication': ['Google'] },
+  } } },
   // Set this to your deployed app URL when building a connected mobile version.
-  // Without it the bundled app supports local tracking and native health reads;
-  // AI, barcode lookup, and server-backed sync still require the deployed server.
+  // The bundled app uses Firebase for accounts and direct APIs for AI and barcodes.
   ...(serverUrl ? { server: { url: serverUrl, cleartext: false } } : {}),
 };
 

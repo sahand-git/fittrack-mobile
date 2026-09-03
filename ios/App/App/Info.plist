@@ -2,18 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>NSHealthShareUsageDescription</key>
-  <string>FitTrack reads your step count to show your daily activity and estimate your calorie budget.</string>
-  <key>NSMotionUsageDescription</key>
-  <string>FitTrack uses motion data when you start the phone step counter.</string>
-  <key>NSCameraUsageDescription</key>
-  <string>FitTrack uses the camera when you choose to scan a food barcode.</string>
-  <key>CAPACITOR_DEBUG</key>
+	<key>NSHealthShareUsageDescription</key>
+	<string>FitTrack reads your step count to show your daily activity and estimate your calorie budget.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>FitTrack uses motion data when you start the phone step counter.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FitTrack uses the camera when you choose to scan a food barcode.</string>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>FitTrack</string>
+	<string>FitTrack</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -33,21 +33,21 @@
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
-    <false/>
-    <key>UISceneConfigurations</key>
-    <dict>
-      <key>UIWindowSceneSessionRoleApplication</key>
-      <array>
-        <dict>
-            <key>UISceneConfigurationName</key>
-            <string>Default Configuration</string>
-            <key>UISceneDelegateClassName</key>
-            <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-            <key>UISceneStoryboardFile</key>
-            <string>Main</string>
-        </dict>
-      </array>
-    </dict>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -72,5 +72,14 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.552347341777-ijh25h7ls0csk37gc383q7u603qcu2tp</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

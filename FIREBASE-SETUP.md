@@ -1,15 +1,20 @@
-# Activate FitTrack account login
+# FitTrack account setup status
 
-The app includes Firebase email/password authentication, verification, password reset, persistent sign-in, sign-out, and separate local records for each verified account. Production authentication is disabled until a real Firebase project's web configuration is supplied. The offline option preserves the existing guest data.
+Firebase project: fittrack-mobile-3db2a
+Owner account: sahandabas2@gmail.com
+Owner user console: https://console.firebase.google.com/u/1/project/fittrack-mobile-3db2a/authentication/users
 
-1. Open https://console.firebase.google.com/ using the app owner's Google account. Select or create the FitTrack project.
-2. Open Authentication, then enable the Email/Password sign-in provider. Set the password policy to at least 8 characters. Review the verification and password-reset email templates and their sender name.
-3. Register a Web app in Project settings. The Capacitor app uses the Firebase JavaScript SDK, so copy its web configuration.
-4. Put the project's `apiKey`, `authDomain`, `projectId`, and `appId` in `src/config/firebase.json`. These are Firebase client configuration values; do not supply a service-account file, private key, Gmail password, or Gemini key.
-5. Run `npm ci`, `npm run lint`, `npm test`, and rebuild the APK. Verify sign-up, email delivery, verification, password reset, sign-in restoration, and sign-out on a real phone.
+Email/Password and Google providers are enabled. Firebase Authentication is the user-account database; no separate database is needed for passwords. Owner actions such as viewing, disabling and deleting users happen in the Firebase console. No owner credentials or client-side admin role are added to the app. Fitness records remain on the phone.
 
-Account sign-in does not upload fitness records. Guest records keep their original storage keys, and each Firebase user ID has a separate local namespace. Signing out retains records. To move guest records into an account, export the guest JSON, sign in, and deliberately import that backup. These local namespaces are not encrypted cloud storage.
+Google login code is prepared for native Android/iPhone and web. Native account selection returns an identity token that Firebase must verify before the app accepts the user. Email/password users must verify their email. Google sign-in does not provide access to Gmail messages or Gemini API usage.
 
-Google OAuth is not included: this flow signs in with email and password. Adding Google or Apple sign-in requires provider registration and native redirect configuration. Gemini access remains a separate, optional consent and connection test.
+Before publishing the next build:
+1. Add the registered Android google-services.json file to android/app/.
+2. Add the registered Apple GoogleService-Info.plist to ios/App/App/, include it in Xcode app resources, and register its REVERSED_CLIENT_ID URL scheme in Info.plist.
+3. Register the actual distributed Android APK signing certificate SHA-1 in Firebase. Current test builds generate different debug keys; stable owner-controlled signing still needs setup. Never publish signing keys in source or build artifacts.
+4. Set password policy to at least 8 characters and review verification/reset email templates and authorized domains.
+5. Sync native plugins, build both platforms, and test real Google sign-in and email verification on phones. The native Firebase SDK requires its platform configuration at initialization; do not ship without it.
 
-Reference: https://firebase.google.com/docs/auth/web/password-auth
+Prepared source passed 26 unit tests and TypeScript checks. Google routing tests use mock responses. Live Google sign-in, email delivery, and the next native build are not yet verified. The currently published APK remains version 1.3 without active login.
+
+Signing out preserves separate account records and clears the Gemini key. Guest records retain their original keys. Export guest JSON before switching if you want to import that backup deliberately into an account. These local records are not encrypted cloud storage.

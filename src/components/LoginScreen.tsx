@@ -34,6 +34,11 @@ export function LoginScreen(){
         <button disabled={busy} onClick={()=>perform(auth.logout)} className="block text-sm text-slate-300 underline">Use another account</button>
       </>:<>
         {mode!=='reset'&&<div className="grid grid-cols-2 p-1 gap-1 rounded-xl bg-slate-950"><button type="button" onClick={()=>switchMode('signin')} className={`rounded-lg py-2 font-semibold text-sm ${mode==='signin'?'bg-slate-700 text-white':'text-slate-400'}`}>Sign in</button><button type="button" onClick={()=>switchMode('signup')} className={`rounded-lg py-2 font-semibold text-sm ${mode==='signup'?'bg-slate-700 text-white':'text-slate-400'}`}>Create account</button></div>}
+        {mode!=='reset'&&<>
+          <button type="button" disabled={busy||!auth.configured} onClick={()=>perform(()=>auth.signInGoogle(remember))} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 disabled:opacity-40">Continue with Google</button>
+          <p className="text-xs text-slate-400">Choose your Google account to sign in or create an account. Google shares your basic profile and email with FitTrack. <a href="/privacypolicy.html" target="_blank" rel="noreferrer" className="text-cyan-300 underline">Privacy notice</a></p>
+          <div className="text-center text-xs text-slate-500">or continue with email</div>
+        </>}
         <form onSubmit={submit} className="space-y-4">
           {mode==='signup'&&<label className="block text-sm">Your name<input className={input+' mt-1'} autoComplete="name" value={name} onChange={e=>setName(e.target.value)} required maxLength={100}/></label>}
           <label className="block text-sm">Email address<input className={input+' mt-1'} type="email" autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} value={email} onChange={e=>setEmail(e.target.value)} required/></label>
