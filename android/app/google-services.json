@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "552347341777",
+    "project_id": "fittrack-mobile-3db2a",
+    "storage_bucket": "fittrack-mobile-3db2a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:552347341777:android:1d60492117786f6bc946f0",
+        "android_client_info": {
+          "package_name": "com.sahand.fitness"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "552347341777-uqmejcsuf8i5pjo56c0g6hj77si03530.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB656jUno7ByEKWdzlBKYEr2aliy00Kebs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "552347341777-uqmejcsuf8i5pjo56c0g6hj77si03530.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "552347341777-ijh25h7ls0csk37gc383q7u603qcu2tp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sahand.fitness"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

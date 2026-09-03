@@ -1,20 +1,21 @@
-# FitTrack account setup status
+# FitTrack account setup
 
-Firebase project: fittrack-mobile-3db2a
-Owner account: sahandabas2@gmail.com
-Owner user console: https://console.firebase.google.com/u/1/project/fittrack-mobile-3db2a/authentication/users
+Project: fittrack-mobile-3db2a
+Owner: sahandabas2@gmail.com
+Owner console: https://console.firebase.google.com/u/1/project/fittrack-mobile-3db2a/authentication/users
 
-Email/Password and Google providers are enabled. Firebase Authentication is the user-account database; no separate database is needed for passwords. Owner actions such as viewing, disabling and deleting users happen in the Firebase console. No owner credentials or client-side admin role are added to the app. Fitness records remain on the phone.
+Firebase Authentication stores the app's registered accounts. Email/Password and Google providers are enabled. The owner can inspect, disable or delete accounts through the console. No admin credentials are placed in the phone app, and no separate database is needed for passwords. The project uses the Spark plan.
 
-Google login code is prepared for native Android/iPhone and web. Native account selection returns an identity token that Firebase must verify before the app accepts the user. Email/password users must verify their email. Google sign-in does not provide access to Gmail messages or Gemini API usage.
+All three registered client configurations are included: Web, Android package com.sahand.fitness, and iPhone bundle com.sahand.fitness. The iPhone plist is included in Xcode resources with its reversed-client-ID callback scheme. Google account tokens from native sign-in are passed to Firebase for verification. The web version uses Firebase's popup flow.
 
-Before publishing the next build:
-1. Add the registered Android google-services.json file to android/app/.
-2. Add the registered Apple GoogleService-Info.plist to ios/App/App/, include it in Xcode app resources, and register its REVERSED_CLIENT_ID URL scheme in Info.plist.
-3. Register the actual distributed Android APK signing certificate SHA-1 in Firebase. Current test builds generate different debug keys; stable owner-controlled signing still needs setup. Never publish signing keys in source or build artifacts.
-4. Set password policy to at least 8 characters and review verification/reset email templates and authorized domains.
-5. Sync native plugins, build both platforms, and test real Google sign-in and email verification on phones. The native Firebase SDK requires its platform configuration at initialization; do not ship without it.
+## Android signing and later releases
 
-Prepared source passed 26 unit tests and TypeScript checks. Google routing tests use mock responses. Live Google sign-in, email delivery, and the next native build are not yet verified. The currently published APK remains version 1.3 without active login.
+Register the SHA-1 fingerprint of the APK actually distributed under Project settings > Android > Add fingerprint. Each current debug build generates a different signing key. A new build therefore needs its fingerprint registered and may not update over the old one. Stable owner-controlled signing remains needed before routine releases or Google Play publication. Never commit a keystore or publish it in build artifacts.
 
-Signing out preserves separate account records and clears the Gemini key. Guest records retain their original keys. Export guest JSON before switching if you want to import that backup deliberately into an account. These local records are not encrypted cloud storage.
+## Data and owner controls
+
+Email/password users must verify their email before opening their account. Signing out retains local fitness records and clears the Gemini session key. Each verified user has a separate local namespace; guest records keep the original keys. These records are not cloud storage and are not uploaded to the owner. Google login requests basic identity information and does not read Gmail or grant Gemini API usage.
+
+## Verification
+
+26 unit tests and TypeScript checks passed. A live temporary Firebase account verified signup, unverified email state, wrong-password rejection and correct-password login; it was removed after the check. Native compilation results are recorded in GitHub Actions. Physical Google account selection, verification-email delivery and signed TestFlight distribution still need confirmation.

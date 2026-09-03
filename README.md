@@ -6,11 +6,11 @@ Meal, workout, weight and step tracking with first-launch profile setup. Android
 
 Get FitTrack.apk from [Releases](https://github.com/sahand-git/fittrack-mobile/releases). Android 9+ is required. Keep an older installation if it contains data you need: older exports are broken and changing debug signing keys can prevent an in-place update. Do not uninstall without a confirmed backup. Stable release signing still needs configuration.
 
-## Version 1.3
+## Version 1.4
 
 Closing Meals, Workouts, or AI Coach returns to the Dashboard. Food categories wrap into readable rows and related categories are grouped. The food picker includes offline Twemoji illustrations and uses available package photos, with credits linked from the list.
 
-The first-launch screen includes sign-in, account creation, email verification, password reset and an offline option. Firebase project setup is required before account actions become active; see [FIREBASE-SETUP.md](FIREBASE-SETUP.md). Verified users get separate local records. Signing out preserves those records and clears the Gemini key. This is email/password authentication, not Google OAuth or cloud fitness-log synchronization.
+The first-launch screen includes sign-in, account creation, email verification, password reset and an offline option. Email/Password and Google sign-in are enabled in the owner's Firebase project. Continue with Google uses native account selection on phones; see [FIREBASE-SETUP.md](FIREBASE-SETUP.md). Verified users get separate local records. Signing out preserves those records and clears the Gemini key. Google and email/password accounts use Firebase Authentication. Fitness logs remain on the device.
 
 Gemini setup lists compatible models returned by Google and verifies generation before enabling AI. Temporary server errors receive two bounded retries. Model-access, quota, authentication and service errors show their HTTP code and sanitized Google details instead of a generic temporary-unavailable message. A live API key is still needed to establish the cause of any particular user's service failure.
 
@@ -22,9 +22,9 @@ Backup & Gemini contains JSON export/import. Native export writes a UTF-8 file t
 
 ## Gemini
 
-Smart Text, Calculate Macros and AI Coach use direct Gemini API requests. Each user may supply their own [Google AI Studio API key](https://aistudio.google.com/apikey), accept the data-sharing notice, and enable it for the session. The key is held only in memory, never bundled, persisted, or exported. The user's API quota and billing apply. Disconnect clears it. This is optional API-key setup, not Google OAuth; typing a Gmail address or owning a Gemini chat subscription does not authorize API access. Google sign-in and authenticated cloud storage remain unconfigured; the insecure email-only prototype sync is disabled.
+Smart Text, Calculate Macros and AI Coach use direct Gemini API requests. Each user may supply their own [Google AI Studio API key](https://aistudio.google.com/apikey), accept the data-sharing notice, and enable it for the session. The key is held only in memory, never bundled, persisted, or exported. The user's API quota and billing apply. Disconnect clears it. This is optional API-key setup, not Google OAuth; typing a Gmail address or owning a Gemini chat subscription does not authorize API access. Google login identifies the user; it does not authorize Gemini API usage. Fitness cloud synchronization remains disabled.
 
-AI estimates need portion review. Twenty-three unit tests and browser checks passed at 320/360/390 pixel widths. Firebase sign-in, persistence, verification gating, logout and account isolation were checked with mocked Google responses. Gemini connection failures, model selection, retry recovery and meal parsing were also mocked. Live Firebase project activation, email delivery, personal Gemini access and physical-device checks remain necessary.
+AI estimates need portion review. Twenty-six unit tests passed. Live Firebase sign-up, wrong-password rejection and correct-password sign-in passed using a temporary account that was then removed. Browser checks cover account isolation and verification gating with mocked responses. Native Google account selection, email delivery, and physical-device health/sharing checks still need confirmation.
 
 ## iPhone
 

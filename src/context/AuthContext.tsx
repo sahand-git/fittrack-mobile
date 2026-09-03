@@ -13,6 +13,7 @@ import { clearGeminiKey } from '../utils/gemini';
 const configured = Boolean(config.apiKey && config.projectId && config.authDomain && config.appId);
 const app = configured ? initializeApp(config) : null;
 const auth = app ? (Capacitor.isNativePlatform() ? initializeAuth(app,{persistence:indexedDBLocalPersistence}) : getAuth(app)) : null;
+const durablePersistence = Capacitor.isNativePlatform() ? indexedDBLocalPersistence : browserLocalPersistence;
 const guestKey = 'fittrack_guest_mode_v1';
 type AuthState = {
   user: User | null; guest: boolean; ready: boolean; configured: boolean;
@@ -37,11 +38,11 @@ export function AuthProvider({children}:{children:React.ReactNode}) {
   },[]);
   const requireAuth=()=>{if(!auth)throw new Error('Login setup is not finished.');return auth;};
   const value:AuthState={user,guest,ready,configured,
-    signIn:async(email,password,remember)=>{const service=requireAuth();await setPersistence(service,remember?browserLocalPersistence:browserSessionPersistence);await signInWithEmailAndPassword(service,email.trim(),password);stopGuest();},
-    signUp:async(name,email,password)=>{const service=requireAuth();await setPersistence(service,browserLocalPersistence);const result=await createUserWithEmailAndPassword(service,email.trim(),password);stopGuest();await updateProfile(result.user,{displayName:name.trim()});await sendEmailVerification(result.user);setRevision(n=>n+1);},
+    signIn:async(email,password,remember)=>{const service=requireAuth();await setPersistence(service,remember?durablePersistence:browserSessionPersistence);await signInWithEmailAndPassword(service,email.trim(),password);stopGuest();},
+    signUp:async(name,email,password)=>{const service=requireAuth();await setPersistence(service,durablePersistence);const result=await createUserWithEmailAndPassword(service,email.trim(),password);stopGuest();await updateProfile(result.user,{displayName:name.trim()});await sendEmailVerification(result.user);setRevision(n=>n+1);},
     signInGoogle:async(remember)=>{
       const service=requireAuth();
-      await setPersistence(service,remember?(Capacitor.isNativePlatform()?indexedDBLocalPersistence:browserLocalPersistence):browserSessionPersistence);
+      await setPersistence(service,remember?durablePersistence:browserSessionPersistence);
       const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
       await completeGoogleLogin(Capacitor.isNativePlatform(),{
         chooseNativeAccount:()=>FirebaseAuthentication.signInWithGoogle({skipNativeAuth:true}),
