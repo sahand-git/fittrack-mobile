@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseBackup, serializeBackup, nextRevision, validateCloudDocument, CLOUD_MAX_BYTES } from '../src/utils/cloudBackupCore.ts';
+import { readFileSync } from 'node:fs';
 
 const sample = () => ({version:'2.0',exportedAt:'2026-09-03T00:00:00.000Z', profile:{name:'Test',email:'test@example.com',gender:'male',age:26,heightCm:175,weightKg:75,targetWeightKg:70,activityLevel:'moderate',goal:'maintenance',includeStepsInCalorieBudget:true,stepGoal:10000,waterGoalMl:2500,bmr:1700,tdee:2600,targetCalories:2600,targetProtein:150,targetCarbs:300,targetFat:80,profileCompleted:true,isGoogleConnected:false,onboardingVersion:1},dailyLogs:{'2026-09-03':{date:'2026-09-03',meals:{breakfast:[],lunch:[],dinner:[],snack:[]},waterMl:250,steps:10,stepCaloriesBurned:1,workouts:[]}},customFoods:[],weightHistory:[{date:'2026-09-03',weightKg:75}]});
 
@@ -37,4 +38,12 @@ test('remote schema and metadata are validated before use',()=>{
  const doc={schemaVersion:1,revision:1,payload:serializeBackup(sample()),updatedAt:{toDate:()=>new Date('2026-09-03')}};
  assert.equal(validateCloudDocument(doc).revision,1);
  for(const value of [{...doc,revision:0},{...doc,schemaVersion:2},{...doc,payload:'{}'},{...doc,updatedAt:null}]) assert.throws(()=>validateCloudDocument(value),/backup/i);
+});
+
+test('Firestore rules let a verified owner delete only their own backup',()=>{
+ const rules=readFileSync(new URL('../firestore.rules',import.meta.url),'utf8');
+ assert.match(rules,/allow delete:\s*if owner\(\)/);
+ assert.match(rules,/request\.auth\.uid == userId/);
+ assert.match(rules,/request\.auth\.token\.email_verified == true/);
+ assert.match(rules,/allow list:\s*if false/);
 });
