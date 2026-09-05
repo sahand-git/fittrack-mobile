@@ -136,15 +136,15 @@ function DashboardContent() {
         {/* Workouts & Active Exercise Section */}
         {t((activeTab === 'dashboard' || activeTab === 'workouts') && (
           <div id="workout-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-800/80">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
                   <Dumbbell className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white flex flex-wrap items-center gap-2">
                     <span>{t("Exercise & Workout Log")}</span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                    <span className="text-[10px] font-semibold whitespace-nowrap shrink-0 px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30">
                       {t(todayLog.workouts.length)}{t(" recorded ")}</span>
                   </h3>
                   <p className="text-xs text-slate-400">
@@ -166,7 +166,7 @@ function DashboardContent() {
                   id="btn-add-workout-main"
                   type="button"
                   onClick={() => setIsAddWorkoutOpen(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-rose-500/20 active:scale-95"
+                  className="w-full sm:w-auto justify-center whitespace-nowrap shrink-0 px-4 py-2 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-rose-500/20 active:scale-95"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>{t("Log Exercise")}</span>

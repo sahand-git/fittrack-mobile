@@ -133,15 +133,15 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900 shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start justify-between gap-2 p-4 sm:p-5 border-b border-slate-800 bg-slate-900 shrink-0">
+          <div className="flex items-start gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
               <Dumbbell className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <h2 className="text-base font-bold text-white flex flex-wrap items-center gap-2">
                 <span>{t("Log Workout & Exercise")}</span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">{t(" MET 2024 ")}</span>
+                <span className="text-[10px] font-semibold whitespace-nowrap shrink-0 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">{t(" MET 2024 ")}</span>
               </h2>
               <p className="text-xs text-slate-400">{t("Strength sets & cardio expenditure tracking")}</p>
             </div>
@@ -149,7 +149,7 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
           <button
             onClick={onClose}
             aria-label={t("Close Workout Logger")}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="shrink-0 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -158,7 +158,7 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSaveWorkout} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
           {/* Category Chips */}
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex flex-wrap gap-2 pb-1">
             {t((['strength', 'cardio', 'hiit', 'sports', 'flexibility'] as ExerciseCategory[]).map((cat) => (
               <button
                 key={cat}

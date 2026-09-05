@@ -28,3 +28,8 @@ input[type="email"], input[type="password"], input[type="number"], input[type="d
 textarea { unicode-bidi: plaintext; }
 button { white-space: normal; overflow-wrap: anywhere; }
 html[dir="rtl"] .lucide-chevron-left, html[dir="rtl"] .lucide-chevron-right, html[dir="rtl"] .lucide-arrow-right { transform: scaleX(-1); }
+
+/* Workout controls keep words intact at narrow phone widths. */
+#workout-section h3, #add-workout-modal h2 { overflow-wrap: normal; word-break: normal; }
+#btn-add-workout-main, #add-workout-modal button { overflow-wrap: normal; word-break: normal; }
+#btn-add-workout-main { white-space: nowrap; }
