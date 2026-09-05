@@ -15,6 +15,8 @@ import { getTodayDateString } from '../utils/date';
 import { clearGeminiKey } from '../utils/gemini';
 import { exportBackupFile } from '../utils/backup';
 import { accountStorageKeys } from '../utils/account';
+import { parseBackup, serializeBackup, nextRevision, type CloudSnapshot } from '../utils/cloudBackupCore';
+import { readCloudBackup, writeCloudBackup } from '../utils/cloudBackup';
 
 const DEFAULT_PROFILE: UserProfile = {
   name: '',
@@ -82,6 +84,12 @@ interface FitnessContextType {
   disconnectGoogleAccount: () => void;
   resetAccountAndData: () => void;
   syncWithCloud: () => Promise<void>;
+  cloudSnapshot: CloudSnapshot | null | undefined;
+  cloudHasLocalChanges: boolean;
+  refreshCloudBackup: () => Promise<void>;
+  restoreCloudBackup: () => Promise<void>;
+  hasRecoveryBackup: boolean;
+  exportRecoveryBackupJSON: () => Promise<'share' | 'download'>;
   exportBackupJSON: () => Promise<'share' | 'download'>;
   getBackupJSON: () => string;
   importBackupJSON: (jsonStr: string) => boolean;
@@ -152,6 +160,15 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
 
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [cloudSnapshot, setCloudSnapshot] = useState<CloudSnapshot | null | undefined>(undefined);
+  const [backedUpContent, setBackedUpContent] = useState<string | null>(null);
+  const busyRef = useRef(false);
+  const recoveryKey = STORAGE_KEY_PROFILE + '_before_restore';
+  const [hasRecoveryBackup, setHasRecoveryBackup] = useState(() => {
+    try { return Boolean(localStorage.getItem(recoveryKey)); } catch { return false; }
+  });
+  const localContent = JSON.stringify({ profile, dailyLogs, customFoods, weightHistory });
+  const cloudHasLocalChanges = backedUpContent !== localContent;
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
   useEffect(() => { clearGeminiKey(); }, [profile.email]);
@@ -195,8 +212,30 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
   // Active day's log object
   const todayLog = dailyLogs[currentDate] || createEmptyDayLog(currentDate);
 
-  // Gmail OAuth and a persistent authenticated backend are not configured.
-  const syncWithCloud = async () => {};
+  const cloudAction = async (action: () => Promise<void>) => {
+    if (busyRef.current) throw new Error('A cloud operation is already in progress.');
+    busyRef.current = true; setIsSyncing(true);
+    try { await action(); } finally { busyRef.current = false; setIsSyncing(false); }
+  };
+  const refreshCloudBackup = () => cloudAction(async () => {
+    setCloudSnapshot(undefined);
+    setCloudSnapshot(await readCloudBackup(accountId));
+  });
+  const syncWithCloud = () => cloudAction(async () => {
+    if (cloudSnapshot === undefined) throw new Error('Check cloud backup before saving.');
+    const content = localContent;
+    const result = await writeCloudBackup(accountId, JSON.parse(getBackupJSON()), cloudSnapshot?.revision ?? null);
+    setCloudSnapshot(result); setLastSyncedAt(result.updatedAt); setBackedUpContent(content);
+  });
+  const restoreCloudBackup = () => cloudAction(async () => {
+    if (!cloudSnapshot) throw new Error('Check cloud backup and select an existing backup first.');
+    const latest = await readCloudBackup(accountId);
+    nextRevision(cloudSnapshot.revision, latest?.revision ?? null);
+    if (!latest || !importBackupJSON(latest.payload)) throw new Error('Restore could not save safely on this device. Free storage space, export your data, and try again.');
+    const restored = parseBackup(latest.payload);
+    setCloudSnapshot(latest); setLastSyncedAt(latest.updatedAt);
+    setBackedUpContent(JSON.stringify({profile:restored.profile,dailyLogs:restored.dailyLogs,customFoods:restored.customFoods,weightHistory:restored.weightHistory}));
+  });
   const connectGoogleAccount = async (_email: string, _name?: string) => false;
   const disconnectGoogleAccount = () => { clearGeminiKey(); setProfile(prev => ({ ...prev, isGoogleConnected: false })); };
 
@@ -214,6 +253,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
     setCustomFoods([]);
     setWeightHistory([]);
     setLastSyncedAt(null);
+    setBackedUpContent(null);
   };
 
   const updateProfile = (updated: Partial<UserProfile>) => {
@@ -447,22 +487,40 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
       customFoods,
       weightHistory
     };
-    return JSON.stringify(data, null, 2);
+    return serializeBackup(data, false);
   };
   const exportBackupJSON = () => exportBackupFile(getBackupJSON());
 
   const importBackupJSON = (jsonStr: string): boolean => {
     try {
-      const parsed = JSON.parse(jsonStr);
-      if (parsed.profile) setProfile(parsed.profile);
-      if (parsed.dailyLogs) setDailyLogs(parsed.dailyLogs);
-      if (parsed.customFoods) setCustomFoods(parsed.customFoods);
-      if (parsed.weightHistory) setWeightHistory(parsed.weightHistory);
+      const parsed = parseBackup(jsonStr);
+      // Retain a complete pre-restore copy before changing any existing local data.
+      const previous = getBackupJSON();
+      const writes = [[STORAGE_KEY_PROFILE, parsed.profile], [STORAGE_KEY_LOGS, parsed.dailyLogs], [STORAGE_KEY_CUSTOM_FOODS, parsed.customFoods], [STORAGE_KEY_WEIGHTS, parsed.weightHistory]] as const;
+      const oldValues = writes.map(([key]) => [key, localStorage.getItem(key)] as const);
+      localStorage.setItem(recoveryKey, previous);
+      setHasRecoveryBackup(true);
+      try {
+        for (const [key, value] of writes) localStorage.setItem(key, JSON.stringify(value));
+      } catch (error) {
+        for (const [key, value] of oldValues) {
+          try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch { /* Recovery copy remains available. */ }
+        }
+        throw error;
+      }
+      setProfile(parsed.profile); setDailyLogs(parsed.dailyLogs);
+      setCustomFoods(parsed.customFoods); customFoodsRef.current = parsed.customFoods;
+      setWeightHistory(parsed.weightHistory);
       return true;
     } catch (err) {
       console.error('Import backup failed:', err);
       return false;
     }
+  };
+  const exportRecoveryBackupJSON = () => {
+    const recovery = localStorage.getItem(recoveryKey);
+    if (!recovery) throw new Error('No pre-restore copy is available.');
+    return exportBackupFile(recovery);
   };
 
   return (
@@ -496,6 +554,12 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
         disconnectGoogleAccount,
         resetAccountAndData,
         syncWithCloud,
+        cloudSnapshot,
+        cloudHasLocalChanges,
+        refreshCloudBackup,
+        restoreCloudBackup,
+        hasRecoveryBackup,
+        exportRecoveryBackupJSON,
         exportBackupJSON,
         getBackupJSON,
         importBackupJSON

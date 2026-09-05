@@ -19,3 +19,12 @@ header { padding-top: env(safe-area-inset-top); }
   max-height: min(80vh, 640px);
   max-height: min(80dvh, 640px);
 }
+
+html[dir="rtl"] { font-family: Tahoma, "Segoe UI", Arial, sans-serif; }
+html[dir="rtl"] .font-sans { font-family: Tahoma, "Segoe UI", Arial, sans-serif; }
+html[dir="rtl"] .uppercase { text-transform: none; letter-spacing: normal; }
+html[dir="rtl"] .tracking-wider, html[dir="rtl"] .tracking-widest { letter-spacing: normal; }
+input[type="email"], input[type="password"], input[type="number"], input[type="date"], .font-mono { direction: ltr; unicode-bidi: isolate; }
+textarea { unicode-bidi: plaintext; }
+button { white-space: normal; overflow-wrap: anywhere; }
+html[dir="rtl"] .lucide-chevron-left, html[dir="rtl"] .lucide-chevron-right, html[dir="rtl"] .lucide-arrow-right { transform: scaleX(-1); }

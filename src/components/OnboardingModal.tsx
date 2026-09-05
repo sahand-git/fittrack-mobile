@@ -1,3 +1,5 @@
+/* localized-render */
+import { t, useLocale, localeTag, matchesLocalized } from "../utils/locale";
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -33,6 +35,7 @@ interface OnboardingModalProps {
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true, onClose }) => {
+  useLocale();
   const { profile, completeOnboarding } = useFitness();
 
   const [step, setStep] = useState<number>(1);
@@ -179,13 +182,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                 <Flame className="w-5 h-5" />
               </div>
               <div>
-                <h2 id="onboarding-title" className="text-lg font-bold text-white tracking-tight">Set up your profile</h2>
-                <p className="text-xs text-slate-400">Your details help estimate daily nutrition targets.</p>
+                <h2 id="onboarding-title" className="text-lg font-bold text-white tracking-tight">{t("Set up your profile")}</h2>
+                <p className="text-xs text-slate-400">{t("Your details help estimate daily nutrition targets.")}</p>
               </div>
             </div>
-            <div className="text-xs font-semibold px-3 py-1 bg-slate-800/80 border border-slate-700 rounded-full text-emerald-400">
-              Step {step} of 4
-            </div>
+            <div className="text-xs font-semibold px-3 py-1 bg-slate-800/80 border border-slate-700 rounded-full text-emerald-400">{t(" Step ")}{t(step)}{t(" of 4 ")}</div>
           </div>
 
           {/* Progress Bar */}
@@ -199,10 +200,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
 
         {/* Step Body */}
         <div className="min-h-0 p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
-          {errorMessage && <p role="alert" className="p-3 rounded-xl bg-rose-500/15 text-rose-300 text-sm">{errorMessage}</p>}
+          {t(errorMessage && <p role="alert" className="p-3 rounded-xl bg-rose-500/15 text-rose-300 text-sm">{t(errorMessage)}</p>)}
           <AnimatePresence mode="wait">
             {/* STEP 1: Basic Identity & Gmail Connection */}
-            {step === 1 && (
+            {t(step === 1 && (
               <motion.div
                 key="step1"
                 initial={{ opacity: 0, x: 20 }}
@@ -211,19 +212,18 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                 className="space-y-6"
               >
                 <div className="text-center space-y-2 mb-6">
-                  <h3 className="text-lg font-semibold text-white">Let's set up your profile</h3>
+                  <h3 className="text-lg font-semibold text-white">{t("Let's set up your profile")}</h3>
                   <p className="text-sm text-slate-400">
-                    {profile.name ? 'Please confirm your saved details once for this updated setup. Your existing logs will be kept.' : 'Enter your details to personalize your targets. Setup is saved on this device; no account is required.'}
+                    {t(profile.name ? 'Please confirm your saved details once for this updated setup. Your existing logs will be kept.' : 'Enter your details to personalize your targets. Setup is saved on this device; no account is required.')}
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                      Your Full Name or Nickname <span className="text-emerald-400">*</span>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">{t(" Your Full Name or Nickname ")}<span className="text-emerald-400">*</span>
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <User className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                       <input
                         id="input-user-name"
                         type="text"
@@ -232,8 +232,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                           setName(e.target.value);
                           if (errorMessage) setErrorMessage(null);
                         }}
-                        placeholder="e.g. Alex"
-                        className="w-full pl-10 pr-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
+                        placeholder={t("e.g. Alex")}
+                        className="w-full ps-10 pe-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
                         required
                       />
                     </div>
@@ -241,11 +241,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
 
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center justify-between">
-                      <span>Email (optional)</span>
-                      <span className="text-xs text-slate-400 font-normal">Does not connect a health app</span>
+                      <span>{t("Email (optional)")}</span>
+                      <span className="text-xs text-slate-400 font-normal">{t("Does not connect a health app")}</span>
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <Mail className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                       <input
                         id="input-user-email"
                         type="email"
@@ -254,17 +254,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                           setEmail(e.target.value);
                           if (errorMessage) setErrorMessage(null);
                         }}
-                        placeholder="e.g. yourname@gmail.com"
-                        className="w-full pl-10 pr-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
+                        placeholder={t("e.g. yourname@gmail.com")}
+                        className="w-full ps-10 pe-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
                       />
                     </div>
                   </div>
 
                   {/* Gender Selector */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-2">Biological Sex (for BMR Calculation)</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-2">{t("Biological Sex (for BMR Calculation)")}</label>
                     <div className="grid grid-cols-3 gap-3">
-                      {(['male', 'female', 'other'] as Gender[]).map((g) => (
+                      {t((['male', 'female', 'other'] as Gender[]).map((g) => (
                         <button
                           key={g}
                           type="button"
@@ -275,15 +275,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                               : 'bg-slate-800/60 border-slate-700/80 text-slate-400 hover:text-slate-200 hover:border-slate-600'
                           }`}
                         >
-                          {g === 'male' ? '👨 Male' : g === 'female' ? '👩 Female' : '🧑 Other'}
+                          {t(g === 'male' ? '👨 Male' : g === 'female' ? '👩 Female' : '🧑 Other')}
                         </button>
-                      ))}
+                      )))}
                     </div>
                   </div>
 
                   {/* Age */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1.5">Age</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">{t("Age")}</label>
                     <input
                       id="input-user-age"
                       type="number"
@@ -296,10 +296,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                   </div>
                 </div>
               </motion.div>
-            )}
+            ))}
 
             {/* STEP 2: Height, Weight & Metric/Imperial */}
-            {step === 2 && (
+            {t(step === 2 && (
               <motion.div
                 key="step2"
                 initial={{ opacity: 0, x: 20 }}
@@ -309,8 +309,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Body Measurements</h3>
-                    <p className="text-xs text-slate-400">Used for Mifflin-St Jeor formula</p>
+                    <h3 className="text-lg font-semibold text-white">{t("Body Measurements")}</h3>
+                    <p className="text-xs text-slate-400">{t("Used for Mifflin-St Jeor formula")}</p>
                   </div>
                   {/* Unit Toggle */}
                   <div className="flex bg-slate-800 border border-slate-700 p-1 rounded-xl">
@@ -320,18 +320,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                       className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                         unitSystem === 'metric' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                       }`}
-                    >
-                      Metric (kg/cm)
-                    </button>
+                    >{t(" Metric (kg/cm) ")}</button>
                     <button
                       type="button"
                       onClick={() => handleUnitSystemChange('imperial')}
                       className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                         unitSystem === 'imperial' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                       }`}
-                    >
-                      Imperial (lbs/ft)
-                    </button>
+                    >{t(" Imperial (lbs/ft) ")}</button>
                   </div>
                 </div>
 
@@ -339,10 +335,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                   {/* Height */}
                   <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-800 space-y-2">
                     <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                      <Ruler className="w-4 h-4 text-cyan-400" />
-                      Height
-                    </label>
-                    {unitSystem === 'metric' ? (
+                      <Ruler className="w-4 h-4 text-cyan-400" />{t(" Height ")}</label>
+                    {t(unitSystem === 'metric' ? (
                       <div className="flex items-center gap-2">
                         <input
                           id="input-height-cm"
@@ -353,7 +347,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                           onChange={(e) => setHeightCm(Number(e.target.value))}
                           className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium focus:border-emerald-500 focus:outline-none"
                         />
-                        <span className="text-xs font-semibold text-slate-400">cm</span>
+                        <span className="text-xs font-semibold text-slate-400">{t("cm")}</span>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-2">
@@ -366,7 +360,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                             onChange={(e) => handleHeightFtInChange(parseInt(e.target.value) || 5, heightIn)}
                             className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium"
                           />
-                          <span className="text-xs text-slate-400">ft</span>
+                          <span className="text-xs text-slate-400">{t("ft")}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <input
@@ -377,19 +371,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                             onChange={(e) => handleHeightFtInChange(heightFt, parseInt(e.target.value) || 0)}
                             className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium"
                           />
-                          <span className="text-xs text-slate-400">in</span>
+                          <span className="text-xs text-slate-400">{t("in")}</span>
                         </div>
                       </div>
-                    )}
+                    ))}
                   </div>
 
                   {/* Current Weight */}
                   <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-800 space-y-2">
                     <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                      <Scale className="w-4 h-4 text-emerald-400" />
-                      Current Weight
-                    </label>
-                    {unitSystem === 'metric' ? (
+                      <Scale className="w-4 h-4 text-emerald-400" />{t(" Current Weight ")}</label>
+                    {t(unitSystem === 'metric' ? (
                       <div className="flex items-center gap-2">
                         <input
                           id="input-weight-kg"
@@ -401,7 +393,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                           onChange={(e) => setWeightKg(Number(e.target.value))}
                           className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium focus:border-emerald-500 focus:outline-none"
                         />
-                        <span className="text-xs font-semibold text-slate-400">kg</span>
+                        <span className="text-xs font-semibold text-slate-400">{t("kg")}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
@@ -414,18 +406,16 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                           onChange={(e) => handleWeightLbsChange(parseFloat(e.target.value) || 150)}
                           className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium"
                         />
-                        <span className="text-xs font-semibold text-slate-400">lbs</span>
+                        <span className="text-xs font-semibold text-slate-400">{t("lbs")}</span>
                       </div>
-                    )}
+                    ))}
                   </div>
 
                   {/* Target Weight */}
                   <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-800 space-y-2 md:col-span-2">
                     <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                      <Target className="w-4 h-4 text-amber-400" />
-                      Goal Target Weight
-                    </label>
-                    {unitSystem === 'metric' ? (
+                      <Target className="w-4 h-4 text-amber-400" />{t(" Goal Target Weight ")}</label>
+                    {t(unitSystem === 'metric' ? (
                       <div className="flex items-center gap-2">
                         <input
                           id="input-target-weight-kg"
@@ -437,7 +427,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                           onChange={(e) => setTargetWeightKg(Number(e.target.value))}
                           className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium focus:border-emerald-500 focus:outline-none"
                         />
-                        <span className="text-xs font-semibold text-slate-400">kg</span>
+                        <span className="text-xs font-semibold text-slate-400">{t("kg")}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
@@ -450,16 +440,16 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                           onChange={(e) => handleTargetWeightLbsChange(parseFloat(e.target.value) || 150)}
                           className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium"
                         />
-                        <span className="text-xs font-semibold text-slate-400">lbs</span>
+                        <span className="text-xs font-semibold text-slate-400">{t("lbs")}</span>
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
               </motion.div>
-            )}
+            ))}
 
             {/* STEP 3: Activity Level, Goals & Step Calorie Toggle */}
-            {step === 3 && (
+            {t(step === 3 && (
               <motion.div
                 key="step3"
                 initial={{ opacity: 0, x: 20 }}
@@ -468,15 +458,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                 className="space-y-6"
               >
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Daily Activity & Goal</h3>
-                  <p className="text-xs text-slate-400">Adjusts your Total Daily Energy Expenditure (TDEE)</p>
+                  <h3 className="text-lg font-semibold text-white">{t("Daily Activity & Goal")}</h3>
+                  <p className="text-xs text-slate-400">{t("Adjusts your Total Daily Energy Expenditure (TDEE)")}</p>
                 </div>
 
                 {/* Activity Level */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-slate-300">Activity Level</label>
+                  <label className="text-xs font-medium text-slate-300">{t("Activity Level")}</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {(Object.keys(ACTIVITY_MULTIPLIERS) as ActivityLevel[]).map((key) => {
+                    {t((Object.keys(ACTIVITY_MULTIPLIERS) as ActivityLevel[]).map((key) => {
                       const item = ACTIVITY_MULTIPLIERS[key];
                       const isSelected = activityLevel === key;
                       return (
@@ -484,28 +474,28 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                           key={key}
                           type="button"
                           onClick={() => setActivityLevel(key)}
-                          className={`p-3 rounded-xl border text-left transition-all ${
+                          className={`p-3 rounded-xl border text-start transition-all ${
                             isSelected
                               ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm'
                               : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'
                           }`}
                         >
                           <div className="text-xs font-bold text-slate-200 flex items-center justify-between">
-                            <span>{item.label}</span>
-                            <span className="text-[10px] text-emerald-400 font-mono">x{item.multiplier}</span>
+                            <span>{t(item.label)}</span>
+                            <span className="text-[10px] text-emerald-400 font-mono">{t("x")}{t(item.multiplier)}</span>
                           </div>
-                          <div className="text-[11px] text-slate-400 mt-1 leading-snug">{item.desc}</div>
+                          <div className="text-[11px] text-slate-400 mt-1 leading-snug">{t(item.desc)}</div>
                         </button>
                       );
-                    })}
+                    }))}
                   </div>
                 </div>
 
                 {/* Fitness Goal */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-slate-300">Fitness Objective</label>
+                  <label className="text-xs font-medium text-slate-300">{t("Fitness Objective")}</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {(Object.keys(GOAL_ADJUSTMENTS) as FitnessGoal[]).map((key) => {
+                    {t((Object.keys(GOAL_ADJUSTMENTS) as FitnessGoal[]).map((key) => {
                       const item = GOAL_ADJUSTMENTS[key];
                       const isSelected = goal === key;
                       return (
@@ -513,22 +503,21 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                           key={key}
                           type="button"
                           onClick={() => setGoal(key)}
-                          className={`p-3 rounded-xl border text-left transition-all ${
+                          className={`p-3 rounded-xl border text-start transition-all ${
                             isSelected
                               ? 'bg-cyan-500/15 border-cyan-500 text-white shadow-sm'
                               : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'
                           }`}
                         >
                           <div className="text-xs font-bold text-slate-200 flex items-center justify-between">
-                            <span>{item.label}</span>
+                            <span>{t(item.label)}</span>
                             <span className={`text-[10px] font-mono ${item.calorieDelta < 0 ? 'text-amber-400' : item.calorieDelta > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>
-                              {item.calorieDelta > 0 ? `+${item.calorieDelta}` : item.calorieDelta} kcal
-                            </span>
+                              {t(item.calorieDelta > 0 ? `+${item.calorieDelta}` : item.calorieDelta)}{t(" kcal ")}</span>
                           </div>
-                          <div className="text-[11px] text-slate-400 mt-1 leading-snug">{item.desc}</div>
+                          <div className="text-[11px] text-slate-400 mt-1 leading-snug">{t(item.desc)}</div>
                         </button>
                       );
-                    })}
+                    }))}
                   </div>
                 </div>
 
@@ -541,12 +530,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                       </div>
                       <div>
                         <div className="text-xs font-semibold text-white flex items-center gap-1.5">
-                          <span>Add Step Burn to Daily Calorie Budget?</span>
+                          <span>{t("Add Step Burn to Daily Calorie Budget?")}</span>
                         </div>
                         <div className="text-[11px] text-slate-400">
-                          {includeStepsInCalorieBudget
+                          {t(includeStepsInCalorieBudget
                             ? 'Calories burned from phone steps will expand your eating allowance'
-                            : 'Eating allowance stays fixed; step calories are logged as extra bonus deficit'}
+                            : 'Eating allowance stays fixed; step calories are logged as extra bonus deficit')}
                         </div>
                       </div>
                     </div>
@@ -568,10 +557,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                   </div>
                 </div>
               </motion.div>
-            )}
+            ))}
 
             {/* STEP 4: Calculated Results & Scientific Overview */}
-            {step === 4 && (
+            {t(step === 4 && (
               <motion.div
                 key="step4"
                 initial={{ opacity: 0, x: 20 }}
@@ -581,89 +570,85 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
               >
                 <div className="text-center space-y-1">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/30">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Mifflin-St Jeor Calculation Complete
-                  </span>
-                  <h3 className="text-xl font-bold text-white pt-1">Your Customized Daily Blueprint</h3>
+                    <Sparkles className="w-3.5 h-3.5" />{t(" Mifflin-St Jeor Calculation Complete ")}</span>
+                  <h3 className="text-xl font-bold text-white pt-1">{t("Your Customized Daily Blueprint")}</h3>
                 </div>
 
                 {/* Energy Numbers Card */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-slate-800/60 border border-slate-700/80 p-3.5 rounded-2xl text-center">
-                    <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block">BMR (Basal)</span>
-                    <span className="text-lg font-extrabold text-white mt-1 block">{calculated.bmr}</span>
-                    <span className="text-[10px] text-slate-500">kcal at rest</span>
+                    <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block">{t("BMR (Basal)")}</span>
+                    <span className="text-lg font-extrabold text-white mt-1 block">{t(calculated.bmr)}</span>
+                    <span className="text-[10px] text-slate-500">{t("kcal at rest")}</span>
                   </div>
 
                   <div className="bg-slate-800/60 border border-slate-700/80 p-3.5 rounded-2xl text-center">
-                    <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block">TDEE (Burn)</span>
-                    <span className="text-lg font-extrabold text-cyan-400 mt-1 block">{calculated.tdee}</span>
-                    <span className="text-[10px] text-slate-500">daily burn</span>
+                    <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block">{t("TDEE (Burn)")}</span>
+                    <span className="text-lg font-extrabold text-cyan-400 mt-1 block">{t(calculated.tdee)}</span>
+                    <span className="text-[10px] text-slate-500">{t("daily burn")}</span>
                   </div>
 
                   <div className="bg-gradient-to-b from-emerald-500/20 to-emerald-950/30 border border-emerald-500/40 p-3.5 rounded-2xl text-center shadow-lg shadow-emerald-950/50">
-                    <span className="text-[11px] uppercase tracking-wider text-emerald-300 font-semibold block">Target Calorie</span>
-                    <span className="text-xl font-black text-emerald-400 mt-1 block">{calculated.targetCalories}</span>
-                    <span className="text-[10px] text-emerald-300/70">kcal / day</span>
+                    <span className="text-[11px] uppercase tracking-wider text-emerald-300 font-semibold block">{t("Target Calorie")}</span>
+                    <span className="text-xl font-black text-emerald-400 mt-1 block">{t(calculated.targetCalories)}</span>
+                    <span className="text-[10px] text-emerald-300/70">{t("kcal / day")}</span>
                   </div>
                 </div>
 
                 {/* Target Macronutrients */}
                 <div className="bg-slate-800/40 border border-slate-800 p-4 rounded-2xl space-y-3">
-                  <span className="text-xs font-semibold text-slate-300 block">Optimal Macro Targets</span>
+                  <span className="text-xs font-semibold text-slate-300 block">{t("Optimal Macro Targets")}</span>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-center">
-                      <span className="text-xs text-rose-400 font-semibold block">Protein</span>
-                      <span className="text-base font-bold text-white mt-0.5 block">{calculated.targetProtein}g</span>
-                      <span className="text-[10px] text-slate-400 font-mono">{(calculated.targetProtein * 4)} kcal</span>
+                      <span className="text-xs text-rose-400 font-semibold block">{t("Protein")}</span>
+                      <span className="text-base font-bold text-white mt-0.5 block">{t(calculated.targetProtein)}{t("g")}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{t((calculated.targetProtein * 4))}{t(" kcal")}</span>
                     </div>
 
                     <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-center">
-                      <span className="text-xs text-amber-400 font-semibold block">Carbs</span>
-                      <span className="text-base font-bold text-white mt-0.5 block">{calculated.targetCarbs}g</span>
-                      <span className="text-[10px] text-slate-400 font-mono">{(calculated.targetCarbs * 4)} kcal</span>
+                      <span className="text-xs text-amber-400 font-semibold block">{t("Carbs")}</span>
+                      <span className="text-base font-bold text-white mt-0.5 block">{t(calculated.targetCarbs)}{t("g")}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{t((calculated.targetCarbs * 4))}{t(" kcal")}</span>
                     </div>
 
                     <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-center">
-                      <span className="text-xs text-blue-400 font-semibold block">Healthy Fats</span>
-                      <span className="text-base font-bold text-white mt-0.5 block">{calculated.targetFat}g</span>
-                      <span className="text-[10px] text-slate-400 font-mono">{(calculated.targetFat * 9)} kcal</span>
+                      <span className="text-xs text-blue-400 font-semibold block">{t("Healthy Fats")}</span>
+                      <span className="text-base font-bold text-white mt-0.5 block">{t(calculated.targetFat)}{t("g")}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{t((calculated.targetFat * 9))}{t(" kcal")}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Settings review */}
                 <div className="flex items-center justify-between text-xs text-slate-400 px-1">
-                  <span>Step calorie integration: <strong className="text-emerald-400">{includeStepsInCalorieBudget ? 'Enabled' : 'Disabled'}</strong></span>
-                  <span>Daily step goal: <strong className="text-white">{stepGoal.toLocaleString()} steps</strong></span>
+                  <span>{t("Step calorie integration: ")}<strong className="text-emerald-400">{t(includeStepsInCalorieBudget ? 'Enabled' : 'Disabled')}</strong></span>
+                  <span>{t("Daily step goal: ")}<strong className="text-white">{t(stepGoal.toLocaleString(localeTag()))}{t(" steps")}</strong></span>
                 </div>
               </motion.div>
-            )}
+            ))}
           </AnimatePresence>
         </div>
 
         {/* Modal Navigation Buttons */}
         <div className="shrink-0 p-4 sm:p-6 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between">
-          {step > 1 ? (
+          {t(step > 1 ? (
             <button
               type="button"
               onClick={() => setStep(step - 1)}
               className="px-5 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-xs font-semibold hover:bg-slate-800 transition-all"
-            >
-              Back
-            </button>
+            >{t(" Back ")}</button>
           ) : (
             <div />
-          )}
+          ))}
 
-          {step < 4 ? (
+          {t(step < 4 ? (
             <button
               id="button-onboarding-next"
               type="button"
               onClick={handleNextStep}
               className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
             >
-              <span>Next</span>
+              <span>{t("Next")}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
@@ -674,9 +659,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
               className="px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 text-sm font-black flex items-center gap-2 transition-all shadow-xl shadow-emerald-500/30 active:scale-95"
             >
               <CheckCircle2 className="w-5 h-5" />
-              <span>Start Tracking</span>
+              <span>{t("Start Tracking")}</span>
             </button>
-          )}
+          ))}
         </div>
       </motion.div>
     </div>

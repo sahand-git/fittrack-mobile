@@ -9,6 +9,8 @@ export function accountStorageKeys(uid?: string) {
   };
 }
 
+export const canConfirmAccountDeletion = (value: string) => value === 'DELETE';
+
 export function authErrorMessage(error: unknown) {
   const code = (error as {code?: string})?.code;
   const messages: Record<string,string> = {

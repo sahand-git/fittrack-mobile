@@ -1,3 +1,5 @@
+/* localized-render */
+import { t, useLocale, localeTag, matchesLocalized } from "../utils/locale";
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -64,17 +66,18 @@ export const MealTracker: React.FC<MealTrackerProps> = ({
   activeTab,
   setActiveTab
 }) => {
+  useLocale();
   const { todayLog, removeLoggedFood } = useFitness();
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Meal & Nutrition Log</h3>
-        <span className="text-xs text-slate-400">Tap + to add or scan food</span>
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider">{t("Meal & Nutrition Log")}</h3>
+        <span className="text-xs text-slate-400">{t("Tap + to add or scan food")}</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {MEAL_SECTIONS.map((section) => {
+        {t(MEAL_SECTIONS.map((section) => {
           const items: LoggedMealItem[] = todayLog.meals[section.type] || [];
           const mealCalories = items.reduce((acc, item) => acc + item.calories, 0);
           const mealProtein = Math.round(items.reduce((acc, item) => acc + item.protein, 0) * 10) / 10;
@@ -90,26 +93,24 @@ export const MealTracker: React.FC<MealTrackerProps> = ({
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
                   <div className="flex items-center gap-2.5">
-                    <div className={`p-2 rounded-xl ${section.bgClass}`}>{section.icon}</div>
+                    <div className={`p-2 rounded-xl ${section.bgClass}`}>{t(section.icon)}</div>
                     <div>
-                      <span className="text-sm font-bold text-white block">{section.title}</span>
+                      <span className="text-sm font-bold text-white block">{t(section.title)}</span>
                       <span className="text-[11px] text-slate-400">
-                        {mealProtein}g P • {mealCarbs}g C • {mealFat}g F
-                      </span>
+                        {t(mealProtein)}{t("g P • ")}{t(mealCarbs)}{t("g C • ")}{t(mealFat)}{t("g F ")}</span>
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-end">
                     <span className={`text-sm font-extrabold ${section.colorClass} block`}>
-                      {mealCalories} kcal
-                    </span>
+                      {t(mealCalories)}{t(" kcal ")}</span>
                   </div>
                 </div>
 
                 {/* Items List */}
                 <div className="space-y-2 pt-3 min-h-[60px]">
                   <AnimatePresence>
-                    {items.length > 0 ? (
+                    {t(items.length > 0 ? (
                       items.map((item) => (
                         <motion.div
                           key={item.id}
@@ -120,26 +121,23 @@ export const MealTracker: React.FC<MealTrackerProps> = ({
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-white truncate block">{item.name}</span>
-                              {item.barcode && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-400 font-semibold shrink-0">
-                                  Barcode
-                                </span>
-                              )}
+                              <span className="text-xs font-bold text-white truncate block">{t(item.name)}</span>
+                              {t(item.barcode && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-400 font-semibold shrink-0">{t(" Barcode ")}</span>
+                              ))}
                             </div>
                             <span className="text-[10px] text-slate-400 block mt-0.5">
-                              {item.servingsCount > 1 ? `${item.servingsCount}x ` : ''}
-                              {item.servingSize} • P:{item.protein}g C:{item.carbs}g F:{item.fat}g
-                            </span>
+                              {t(item.servingsCount > 1 ? `${item.servingsCount}x ` : '')}
+                              {t(item.servingSize)}{t(" • P:")}{t(item.protein)}{t("g C:")}{t(item.carbs)}{t("g F:")}{t(item.fat)}{t("g ")}</span>
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-xs font-bold text-slate-200">{item.calories} kcal</span>
+                            <span className="text-xs font-bold text-slate-200">{t(item.calories)}{t(" kcal")}</span>
                             <button
                               type="button"
                               onClick={() => removeLoggedFood(section.type, item.id)}
                               className="p-1 text-slate-500 hover:text-rose-400 opacity-70 group-hover:opacity-100 transition-all rounded-lg"
-                              title="Delete entry"
+                              title={t("Delete entry")}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -147,10 +145,9 @@ export const MealTracker: React.FC<MealTrackerProps> = ({
                         </motion.div>
                       ))
                     ) : (
-                      <div className="py-4 text-center text-xs text-slate-500 italic">
-                        No food logged yet for {section.title.toLowerCase()}
+                      <div className="py-4 text-center text-xs text-slate-500 italic">{t("No food logged yet for")} {t(section.title)}
                       </div>
-                    )}
+                    ))}
                   </AnimatePresence>
                 </div>
               </div>
@@ -163,21 +160,21 @@ export const MealTracker: React.FC<MealTrackerProps> = ({
                   className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Add Food</span>
+                  <span>{t("Add Food")}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => onOpenBarcodeScanner(section.type)}
                   className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
-                  title="Scan package barcode"
+                  title={t("Scan package barcode")}
                 >
                   <Barcode className="w-4 h-4" />
                 </button>
               </div>
             </div>
           );
-        })}
+        }))}
       </div>
     </div>
   );

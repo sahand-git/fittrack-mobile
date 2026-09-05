@@ -1,3 +1,5 @@
+/* localized-render */
+import { t, useLocale, localeTag, matchesLocalized } from "../utils/locale";
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import {
@@ -40,6 +42,7 @@ interface PhoneStepTrackerModalProps {
 }
 
 export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ isOpen, onClose }) => {
+  useLocale();
   const { profile, todayLog, updateSteps, updateProfile } = useFitness();
 
   const [activeTab, setActiveTab] = useState<'phone_sensor' | 'health_sync' | 'bluetooth_wearable'>('phone_sensor');
@@ -229,12 +232,10 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
             </div>
             <div>
               <h2 id="step-tracker-title" className="text-base font-bold text-white flex flex-wrap items-center gap-2">
-                <span>Step Tracker & Health</span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  Live
-                </span>
+                <span>{t("Step Tracker & Health")}</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">{t(" Live ")}</span>
               </h2>
-              <p className="text-xs text-slate-400">Phone steps, health connections & wearables</p>
+              <p className="text-xs text-slate-400">{t("Phone steps, health connections & wearables")}</p>
             </div>
           </div>
 
@@ -242,7 +243,7 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
             id="btn-close-step-modal"
             type="button"
             onClick={onClose}
-            aria-label="Close Step Tracker"
+            aria-label={t("Close Step Tracker")}
             className="shrink-0 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -255,10 +256,9 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
           <div className="bg-slate-800/60 border border-slate-800 p-2.5 rounded-xl text-center relative overflow-hidden">
             <div className="relative z-10 space-y-1">
               <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span className="font-semibold text-white">
-                  Today: <strong className="text-amber-400 text-sm font-black">{currentSteps.toLocaleString()}</strong> / {stepGoal.toLocaleString()}
+                <span className="font-semibold text-white">{t(" Today: ")}<strong className="text-amber-400 text-sm font-black">{t(currentSteps.toLocaleString(localeTag()))}</strong> / {t(stepGoal.toLocaleString(localeTag()))}
                 </span>
-                <span className="text-amber-400 font-bold">{progressPercent}%</span>
+                <span className="text-amber-400 font-bold">{t(progressPercent)}%</span>
               </div>
 
               {/* Progress Bar */}
@@ -275,26 +275,20 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
               <div className="grid grid-cols-3 gap-1 pt-1 border-t border-slate-700/60 text-center">
                 <div className="p-1 rounded bg-slate-900/60">
                   <span className="text-[9px] text-slate-400 flex items-center justify-center gap-0.5">
-                    <Flame className="w-2.5 h-2.5 text-rose-400" />
-                    Calories
-                  </span>
-                  <span className="text-xs font-bold text-white block">{burnedKcal} kcal</span>
+                    <Flame className="w-2.5 h-2.5 text-rose-400" />{t(" Calories ")}</span>
+                  <span className="text-xs font-bold text-white block">{t(burnedKcal)}{t(" kcal")}</span>
                 </div>
 
                 <div className="p-1 rounded bg-slate-900/60">
                   <span className="text-[9px] text-slate-400 flex items-center justify-center gap-0.5">
-                    <MapPin className="w-2.5 h-2.5 text-cyan-400" />
-                    Distance
-                  </span>
-                  <span className="text-xs font-bold text-white block">{distanceKm} km</span>
+                    <MapPin className="w-2.5 h-2.5 text-cyan-400" />{t(" Distance ")}</span>
+                  <span className="text-xs font-bold text-white block">{t(distanceKm)}{t(" km")}</span>
                 </div>
 
                 <div className="p-1 rounded bg-slate-900/60">
                   <span className="text-[9px] text-slate-400 flex items-center justify-center gap-0.5">
-                    <Clock className="w-2.5 h-2.5 text-emerald-400" />
-                    Active Time
-                  </span>
-                  <span className="text-xs font-bold text-white block">~{activeMinutes}m</span>
+                    <Clock className="w-2.5 h-2.5 text-emerald-400" />{t(" Active Time ")}</span>
+                  <span className="text-xs font-bold text-white block">~{t(activeMinutes)}{t("m")}</span>
                 </div>
               </div>
             </div>
@@ -312,7 +306,7 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
               }`}
             >
               <Smartphone className="w-3 h-3" />
-              <span>1. Phone Sensor</span>
+              <span>{t("1. Phone Sensor")}</span>
             </button>
 
             <button
@@ -325,7 +319,7 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
               }`}
             >
               <RefreshCw className="w-3 h-3" />
-              <span>2. Health Apps</span>
+              <span>{t("2. Health Apps")}</span>
             </button>
 
             <button
@@ -338,12 +332,12 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
               }`}
             >
               <Watch className="w-3 h-3" />
-              <span>3. Watch</span>
+              <span>{t("3. Watch")}</span>
             </button>
           </div>
 
           {/* TAB 1: Phone Accelerometer Sensor */}
-          {activeTab === 'phone_sensor' && (
+          {t(activeTab === 'phone_sensor' && (
             <div className="space-y-2.5">
               <div className="bg-slate-800/50 border border-slate-800 p-3 rounded-xl space-y-2.5">
                 <div className="flex items-center justify-between">
@@ -358,8 +352,8 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                       <Compass className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-white block">Accelerometer Detection</span>
-                      <span className="text-[10px] text-slate-400">{sensorStatus}</span>
+                      <span className="text-xs font-bold text-white block">{t("Accelerometer Detection")}</span>
+                      <span className="text-[10px] text-slate-400">{t(sensorStatus)}</span>
                     </div>
                   </div>
 
@@ -373,25 +367,25 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                         : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-sm'
                     }`}
                   >
-                    {isSensorActive ? (
+                    {t(isSensorActive ? (
                       <>
                         <Pause className="w-3 h-3" />
-                        <span>Stop</span>
+                        <span>{t("Stop")}</span>
                       </>
                     ) : (
                       <>
                         <Play className="w-3 h-3" />
-                        <span>Start</span>
+                        <span>{t("Start")}</span>
                       </>
-                    )}
+                    ))}
                   </button>
                 </div>
 
-                {(isSensorActive) && (
+                {t((isSensorActive) && (
                   <div className="pt-2 border-t border-slate-700/60 space-y-1.5">
                     <div className="flex items-center justify-between text-[10px] text-slate-400">
-                      <span>Acceleration: <strong className="text-emerald-400">{liveMagnitude.toFixed(1)} m/s²</strong></span>
-                      <span>Threshold: {sensitivity.toFixed(1)} m/s²</span>
+                      <span>{t("Acceleration: ")}<strong className="text-emerald-400">{t(liveMagnitude.toFixed(1))}{t(" m/s²")}</strong></span>
+                      <span>{t("Threshold: ")}{t(sensitivity.toFixed(1))}{t(" m/s²")}</span>
                     </div>
                     <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700 relative">
                       <div
@@ -404,11 +398,11 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                       />
                     </div>
                   </div>
-                )}
+                ))}
 
                 {/* Sensitivity Slider */}
                 <div className="pt-1.5 border-t border-slate-700/50 flex items-center justify-between text-[11px] text-slate-300">
-                  <span>Sensitivity threshold:</span>
+                  <span>{t("Sensitivity threshold:")}</span>
                   <div className="flex items-center gap-2">
                     <input
                       type="range"
@@ -419,21 +413,21 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                       onChange={(e) => handleSensitivityChange(parseFloat(e.target.value))}
                       className="w-24 accent-amber-500 h-1.5"
                     />
-                    <span className="font-mono text-amber-400 text-xs">{sensitivity.toFixed(1)}</span>
+                    <span className="font-mono text-amber-400 text-xs">{t(sensitivity.toFixed(1))}</span>
                   </div>
                 </div>
               </div>
             </div>
-          )}
+          ))}
 
           {/* TAB 2: Health Apps & Quick Presets */}
-          {activeTab === 'health_sync' && (
+          {t(activeTab === 'health_sync' && (
             <div className="space-y-3">
               <HealthConnection />
 
               {/* Quick Presets */}
               <div className="space-y-1.5">
-                <span className="text-[11px] font-semibold text-slate-300 block">Manual Step Shortcuts</span>
+                <span className="text-[11px] font-semibold text-slate-300 block">{t("Manual Step Shortcuts")}</span>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
@@ -441,7 +435,7 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                     className="p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg text-center transition-colors active:scale-95"
                   >
                     <span className="text-xs font-bold text-amber-400 block">+2,000</span>
-                    <span className="text-[9px] text-slate-400 block">Short Walk</span>
+                    <span className="text-[9px] text-slate-400 block">{t("Short Walk")}</span>
                   </button>
 
                   <button
@@ -450,7 +444,7 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                     className="p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg text-center transition-colors active:scale-95"
                   >
                     <span className="text-xs font-bold text-amber-400 block">+5,000</span>
-                    <span className="text-[9px] text-slate-400 block">Long Walk</span>
+                    <span className="text-[9px] text-slate-400 block">{t("Long Walk")}</span>
                   </button>
 
                   <button
@@ -459,15 +453,15 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                     className="p-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg text-center transition-colors active:scale-95"
                   >
                     <span className="text-xs font-bold text-emerald-400 block">+10,000</span>
-                    <span className="text-[9px] text-slate-400 block">Daily Goal</span>
+                    <span className="text-[9px] text-slate-400 block">{t("Daily Goal")}</span>
                   </button>
                 </div>
               </div>
             </div>
-          )}
+          ))}
 
           {/* TAB 3: Bluetooth Smart Wearable */}
-          {activeTab === 'bluetooth_wearable' && (
+          {t(activeTab === 'bluetooth_wearable' && (
             <div className="bg-slate-800/50 border border-slate-800 p-3 rounded-xl space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -482,24 +476,22 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                   </div>
                   <div>
                     <span className="text-xs font-bold text-white block">
-                      {wearableState.connected ? wearableState.deviceName : 'Bluetooth BLE Wearable'}
+                      {t(wearableState.connected ? wearableState.deviceName : 'Bluetooth BLE Wearable')}
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      {wearableState.connected
+                      {t(wearableState.connected
                         ? `Connected • Last sync: ${wearableState.lastUpdated || 'just now'}`
-                        : 'Garmin, Polar, Apple Companion, Mi Band'}
+                        : 'Garmin, Polar, Apple Companion, Mi Band')}
                     </span>
                   </div>
                 </div>
 
-                {wearableState.connected ? (
+                {t(wearableState.connected ? (
                   <button
                     type="button"
                     onClick={handleDisconnectBluetoothWearable}
                     className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-700 hover:bg-slate-600 text-slate-200 active:scale-95"
-                  >
-                    Disconnect
-                  </button>
+                  >{t(" Disconnect ")}</button>
                 ) : (
                   <button
                     id="btn-pair-bluetooth-wearable"
@@ -509,59 +501,55 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                     className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-sm flex items-center gap-1 transition-all active:scale-95"
                   >
                     <Bluetooth className="w-3 h-3" />
-                    <span>{isConnectingBt ? 'Searching...' : 'Pair'}</span>
+                    <span>{t(isConnectingBt ? 'Searching...' : 'Pair')}</span>
                   </button>
-                )}
+                ))}
               </div>
 
-              {btErrorMessage && (
+              {t(btErrorMessage && (
                 <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[11px] flex items-start gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                  <span>{btErrorMessage}</span>
+                  <span>{t(btErrorMessage)}</span>
                 </div>
-              )}
+              ))}
 
               {/* Wearable live telemetry cards */}
-              {wearableState.connected && (
+              {t(wearableState.connected && (
                 <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-700/60">
                   <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 text-center">
                     <span className="text-[9px] text-slate-400 flex items-center justify-center gap-1">
-                      <Heart className="w-2.5 h-2.5 text-rose-400 animate-pulse" />
-                      Live Heart Rate
-                    </span>
+                      <Heart className="w-2.5 h-2.5 text-rose-400 animate-pulse" />{t(" Live Heart Rate ")}</span>
                     <span className="text-sm font-bold text-white mt-0.5 block">
-                      {wearableState.heartRate ? `${wearableState.heartRate} BPM` : 'Reading...'}
+                      {t(wearableState.heartRate ? `${wearableState.heartRate} BPM` : 'Reading...')}
                     </span>
                   </div>
 
                   <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 text-center">
                     <span className="text-[9px] text-slate-400 flex items-center justify-center gap-1">
-                      <Activity className="w-2.5 h-2.5 text-cyan-400" />
-                      Cadence / Stride
-                    </span>
+                      <Activity className="w-2.5 h-2.5 text-cyan-400" />{t(" Cadence / Stride ")}</span>
                     <span className="text-sm font-bold text-white mt-0.5 block">
-                      {wearableState.cadenceRpm ? `${wearableState.cadenceRpm} RPM` : 'Active'}
+                      {t(wearableState.cadenceRpm ? `${wearableState.cadenceRpm} RPM` : 'Active')}
                     </span>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
-          )}
+          ))}
 
           {/* Manual Increment & Custom Step Input */}
           <div className="space-y-1.5">
-            <span className="text-[11px] font-semibold text-slate-300 block">Manual Step Entry</span>
+            <span className="text-[11px] font-semibold text-slate-300 block">{t("Manual Step Entry")}</span>
             <div className="grid grid-cols-4 gap-1.5">
-              {[+500, +1000, +2500, +5000].map((amt) => (
+              {t([+500, +1000, +2500, +5000].map((amt) => (
                 <button
                   key={amt}
                   type="button"
                   onClick={() => handleAddSteps(amt)}
                   className="py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg text-xs font-bold transition-colors active:scale-95"
                 >
-                  +{amt.toLocaleString()}
+                  +{t(amt.toLocaleString(localeTag()))}
                 </button>
-              ))}
+              )))}
             </div>
 
             {/* Custom Input */}
@@ -572,15 +560,13 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
                 min={0}
                 value={customStepInput}
                 onChange={(e) => setCustomStepInput(e.target.value)}
-                placeholder="Set exact step count..."
+                placeholder={t("Set exact step count...")}
                 className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs focus:outline-none focus:border-amber-500"
               />
               <button
                 type="submit"
                 className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold transition-colors active:scale-95"
-              >
-                Set Total
-              </button>
+              >{t(" Set Total ")}</button>
             </form>
           </div>
 
@@ -588,11 +574,11 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
           <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-800 space-y-1.5">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-white block">Add Step Burn to Calorie Budget?</span>
+                <span className="text-xs font-bold text-white block">{t("Add Step Burn to Calorie Budget?")}</span>
                 <p className="text-[10px] text-slate-400">
-                  {profile.includeStepsInCalorieBudget
+                  {t(profile.includeStepsInCalorieBudget
                     ? `YES (+${burnedKcal} kcal added to daily food budget)`
-                    : `NO (Logged as pure deficit)`}
+                    : `NO (Logged as pure deficit)`)}
                 </p>
               </div>
 
@@ -627,7 +613,7 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
             className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors active:scale-95"
           >
             <X className="w-3.5 h-3.5 text-rose-400" />
-            <span>Close</span>
+            <span>{t("Close")}</span>
           </button>
 
           <button
@@ -637,7 +623,7 @@ export const PhoneStepTrackerModal: React.FC<PhoneStepTrackerModalProps> = ({ is
             className="flex-1 py-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-lg text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Done & Save</span>
+            <span>{t("Done & Save")}</span>
           </button>
         </div>
       </motion.div>

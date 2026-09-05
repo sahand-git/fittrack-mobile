@@ -1,4 +1,7 @@
+/* localized-render */
+import { t, useLocale, localeTag, matchesLocalized } from "./utils/locale";
 import React, { useState, useEffect } from 'react';
+import { LanguagePicker } from './components/LanguagePicker';
 import { FitnessProvider, useFitness } from './context/FitnessContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginScreen } from './components/LoginScreen';
@@ -40,6 +43,7 @@ import {
 } from 'lucide-react';
 
 function DashboardContent() {
+  useLocale();
   const { profile, todayLog, removeWorkout, activeTab, setActiveTab } = useFitness();
 
   // Modals state
@@ -111,7 +115,7 @@ function DashboardContent() {
       {/* Main Container */}
       <main className="max-w-6xl w-full mx-auto px-4 py-6 space-y-6 flex-1">
         {/* Daily Summary & Caloric Budget Engine */}
-        {(activeTab === 'dashboard' || activeTab === 'meals' || activeTab === 'workouts' || activeTab === 'steps') && (
+        {t((activeTab === 'dashboard' || activeTab === 'meals' || activeTab === 'workouts' || activeTab === 'steps') && (
           <DailySummary
             onOpenBarcodeScanner={handleOpenBarcodeScanner}
             onOpenFoodLog={handleOpenFoodLog}
@@ -119,18 +123,18 @@ function DashboardContent() {
             onOpenAICoach={() => setIsAICoachOpen(true)}
             onOpenAddWorkout={() => setIsAddWorkoutOpen(true)}
           />
-        )}
+        ))}
 
         {/* Meal & Nutrition Tracker */}
-        {(activeTab === 'dashboard' || activeTab === 'meals') && (
+        {t((activeTab === 'dashboard' || activeTab === 'meals') && (
           <MealTracker
             onOpenFoodLog={handleOpenFoodLog}
             onOpenBarcodeScanner={handleOpenBarcodeScanner}
           />
-        )}
+        ))}
 
         {/* Workouts & Active Exercise Section */}
-        {(activeTab === 'dashboard' || activeTab === 'workouts') && (
+        {t((activeTab === 'dashboard' || activeTab === 'workouts') && (
           <div id="workout-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
               <div className="flex items-center gap-3">
@@ -139,14 +143,12 @@ function DashboardContent() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <span>Exercise & Workout Log</span>
+                    <span>{t("Exercise & Workout Log")}</span>
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30">
-                      {todayLog.workouts.length} recorded
-                    </span>
+                      {t(todayLog.workouts.length)}{t(" recorded ")}</span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    {todayLog.workouts.reduce((acc, w) => acc + w.caloriesBurned, 0)} kcal burned in active workouts today
-                  </p>
+                    {t(todayLog.workouts.reduce((acc, w) => acc + w.caloriesBurned, 0))}{t(" kcal burned in active workouts today ")}</p>
                 </div>
               </div>
 
@@ -157,7 +159,7 @@ function DashboardContent() {
                   className="hidden sm:flex px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl items-center gap-1.5 transition-colors border border-slate-700"
                 >
                   <BookOpen className="w-3.5 h-3.5 text-rose-400" />
-                  <span>MET Sources</span>
+                  <span>{t("MET Sources")}</span>
                 </button>
 
                 <button
@@ -167,14 +169,14 @@ function DashboardContent() {
                   className="px-4 py-2 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-rose-500/20 active:scale-95"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Log Exercise</span>
+                  <span>{t("Log Exercise")}</span>
                 </button>
               </div>
             </div>
 
             {/* Workouts List */}
             <div className="space-y-3">
-              {todayLog.workouts.length > 0 ? (
+              {t(todayLog.workouts.length > 0 ? (
                 todayLog.workouts.map((workout) => (
                   <div
                     key={workout.id}
@@ -182,36 +184,32 @@ function DashboardContent() {
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-white">{workout.name}</span>
+                        <span className="text-sm font-bold text-white">{t(workout.name)}</span>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 font-semibold border border-rose-500/30 capitalize">
-                          {workout.category}
+                          {t(workout.category)}
                         </span>
-                        <span className="text-[10px] text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">
-                          Ref: Ainsworth MET 2024
-                        </span>
+                        <span className="text-[10px] text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{t(" Ref: Ainsworth MET 2024 ")}</span>
                       </div>
 
                       <div className="text-xs text-slate-400 flex items-center gap-3">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-slate-500" />
-                          {workout.durationMinutes} minutes
-                        </span>
-                        {workout.sets && workout.sets.length > 0 && (
-                          <span>• {workout.sets.length} resistance sets recorded</span>
-                        )}
+                          {t(workout.durationMinutes)}{t(" minutes ")}</span>
+                        {t(workout.sets && workout.sets.length > 0 && (
+                          <span>• {t(workout.sets.length)}{t(" resistance sets recorded")}</span>
+                        ))}
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
                       <span className="text-xs font-bold text-rose-400 flex items-center gap-1">
                         <Flame className="w-3.5 h-3.5" />
-                        +{workout.caloriesBurned} kcal
-                      </span>
+                        +{t(workout.caloriesBurned)}{t(" kcal ")}</span>
                       <button
                         type="button"
                         onClick={() => removeWorkout(workout.id)}
                         className="p-1.5 text-slate-500 hover:text-rose-400 opacity-70 group-hover:opacity-100 transition-all rounded-lg"
-                        title="Delete workout"
+                        title={t("Delete workout")}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -220,23 +218,23 @@ function DashboardContent() {
                 ))
               ) : (
                 <div className="py-6 text-center text-xs text-slate-500 italic bg-slate-800/20 rounded-2xl border border-dashed border-slate-800 space-y-2">
-                  <p>No exercise recorded today. Tap "Log Exercise" to track resistance training, cardio, or sports.</p>
+                  <p>{t("No exercise recorded today. Tap \"Log Exercise\" to track resistance training, cardio, or sports.")}</p>
                   <button
                     type="button"
                     onClick={() => setIsAddWorkoutOpen(true)}
                     className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold inline-flex items-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Log First Workout</span>
+                    <span>{t("Log First Workout")}</span>
                   </button>
                 </div>
-              )}
+              ))}
             </div>
           </div>
-        )}
+        ))}
 
         {/* Dedicated Steps & Phone Activity Hub (visible on steps tab) */}
-        {activeTab === 'steps' && (
+        {t(activeTab === 'steps' && (
           <div id="steps-hub-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
               <div className="flex items-center gap-3">
@@ -245,14 +243,11 @@ function DashboardContent() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <span>Daily Steps & Phone Activity</span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                      Live
-                    </span>
+                    <span>{t("Daily Steps & Phone Activity")}</span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">{t(" Live ")}</span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    {(todayLog.steps || 0).toLocaleString()} / {profile.stepGoal.toLocaleString()} steps • +{Math.round((todayLog.steps || 0) * 0.04)} kcal burned
-                  </p>
+                    {t((todayLog.steps || 0).toLocaleString(localeTag()))} / {t(profile.stepGoal.toLocaleString(localeTag()))}{t(" steps • +")}{t(Math.round((todayLog.steps || 0) * 0.04))}{t(" kcal burned ")}</p>
                 </div>
               </div>
 
@@ -264,7 +259,7 @@ function DashboardContent() {
                   className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-amber-500/20 active:scale-95"
                 >
                   <Footprints className="w-3.5 h-3.5" />
-                  <span>Track & Log Steps</span>
+                  <span>{t("Track & Log Steps")}</span>
                 </button>
               </div>
             </div>
@@ -273,44 +268,44 @@ function DashboardContent() {
               <button
                 type="button"
                 onClick={() => setIsStepTrackerOpen(true)}
-                className="p-4 bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-2xl text-left transition-all group"
+                className="p-4 bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-2xl text-start transition-all group"
               >
                 <div className="flex items-center justify-between text-amber-400 mb-2">
                   <Smartphone className="w-5 h-5" />
-                  <span className="text-xs font-bold font-mono">{(todayLog.steps || 0).toLocaleString()} steps</span>
+                  <span className="text-xs font-bold font-mono">{t((todayLog.steps || 0).toLocaleString(localeTag()))}{t(" steps")}</span>
                 </div>
-                <span className="text-xs font-bold text-white block">Phone Accelerometer</span>
-                <p className="text-[11px] text-slate-400 mt-1">Real-time pedometer with pocket & hand walk detection</p>
+                <span className="text-xs font-bold text-white block">{t("Phone Accelerometer")}</span>
+                <p className="text-[11px] text-slate-400 mt-1">{t("Real-time pedometer with pocket & hand walk detection")}</p>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsStepTrackerOpen(true)}
-                className="p-4 bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-2xl text-left transition-all group"
+                className="p-4 bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-2xl text-start transition-all group"
               >
                 <div className="flex items-center justify-between text-rose-400 mb-2">
-                  <span className="font-bold text-sm"> Health & Fit</span>
-                  <span className="text-xs font-bold font-mono text-emerald-400">Sync Ready</span>
+                  <span className="font-bold text-sm">{t(" Health & Fit")}</span>
+                  <span className="text-xs font-bold font-mono text-emerald-400">{t("Sync Ready")}</span>
                 </div>
-                <span className="text-xs font-bold text-white block">Health App Ecosystems</span>
-                <p className="text-[11px] text-slate-400 mt-1">Apple Health, Google Fit, Samsung Health, Garmin, Fitbit</p>
+                <span className="text-xs font-bold text-white block">{t("Health App Ecosystems")}</span>
+                <p className="text-[11px] text-slate-400 mt-1">{t("Apple Health, Google Fit, Samsung Health, Garmin, Fitbit")}</p>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsStepTrackerOpen(true)}
-                className="p-4 bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-2xl text-left transition-all group"
+                className="p-4 bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-2xl text-start transition-all group"
               >
                 <div className="flex items-center justify-between text-cyan-400 mb-2">
                   <Watch className="w-5 h-5" />
-                  <span className="text-xs font-bold font-mono text-cyan-300">BLE Connect</span>
+                  <span className="text-xs font-bold font-mono text-cyan-300">{t("BLE Connect")}</span>
                 </div>
-                <span className="text-xs font-bold text-white block">Smartwatch & Wearables</span>
-                <p className="text-[11px] text-slate-400 mt-1">Direct Bluetooth heart rate & stride cadence reader</p>
+                <span className="text-xs font-bold text-white block">{t("Smartwatch & Wearables")}</span>
+                <p className="text-[11px] text-slate-400 mt-1">{t("Direct Bluetooth heart rate & stride cadence reader")}</p>
               </button>
             </div>
           </div>
-        )}
+        ))}
       </main>
 
       {/* Persistent Bottom Tab Navigation Bar */}
@@ -327,7 +322,7 @@ function DashboardContent() {
             }`}
           >
             <LayoutDashboard className="w-5 h-5" />
-            <span className="text-[10px]">Dashboard</span>
+            <span className="text-[10px]">{t("Dashboard")}</span>
           </button>
 
           <button
@@ -344,7 +339,7 @@ function DashboardContent() {
             }`}
           >
             <Utensils className="w-5 h-5" />
-            <span className="text-[10px]">Meals</span>
+            <span className="text-[10px]">{t("Meals")}</span>
           </button>
 
           <button
@@ -361,7 +356,7 @@ function DashboardContent() {
             }`}
           >
             <Dumbbell className="w-5 h-5" />
-            <span className="text-[10px]">Workouts</span>
+            <span className="text-[10px]">{t("Workouts")}</span>
           </button>
 
           <button
@@ -378,7 +373,7 @@ function DashboardContent() {
             }`}
           >
             <Footprints className="w-5 h-5" />
-            <span className="text-[10px]">Steps</span>
+            <span className="text-[10px]">{t("Steps")}</span>
           </button>
 
           <button
@@ -393,7 +388,7 @@ function DashboardContent() {
             <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 p-0.5">
               <Bot className="w-3.5 h-3.5" />
             </div>
-            <span className="text-[10px] font-bold">AI Coach</span>
+            <span className="text-[10px] font-bold">{t("AI Coach")}</span>
           </button>
         </div>
       </div>
@@ -458,8 +453,9 @@ function DashboardContent() {
 }
 
 function AccountApp() {
+  useLocale();
   const {user,guest,ready}=useAuth();
-  if (!ready) return <main className="min-h-dvh bg-slate-950 text-slate-200 p-8" role="status">Opening FitTrack…</main>;
+  if (!ready) return <main className="min-h-dvh bg-slate-950 text-slate-200 p-8" role="status">{t("Opening FitTrack…")}</main>;
   if (user ? !user.emailVerified : !guest) return <LoginScreen />;
   return (
     <FitnessProvider key={user?.uid || 'guest'} accountId={user?.uid} accountName={user?.displayName || ''} accountEmail={user?.email || ''}>
@@ -469,5 +465,6 @@ function AccountApp() {
 }
 
 export default function App() {
-  return <AuthProvider><AccountApp /></AuthProvider>;
+  useLocale();
+  return <><div className="bg-slate-950 border-b border-slate-800 px-4 py-2 flex justify-end"><LanguagePicker /></div><AuthProvider><AccountApp /></AuthProvider></>;
 }

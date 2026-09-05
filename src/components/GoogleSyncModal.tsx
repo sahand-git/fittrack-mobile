@@ -1,3 +1,5 @@
+/* localized-render */
+import { t, useLocale, localeTag, matchesLocalized } from "../utils/locale";
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
@@ -15,6 +17,9 @@ import {
 } from 'lucide-react';
 import { GeminiSetup } from './GeminiSetup';
 import { useFitness } from '../context/FitnessContext';
+import { useAuth } from '../context/AuthContext';
+import { cloudBackupError } from '../utils/cloudBackup';
+import { canConfirmAccountDeletion } from '../utils/account';
 
 interface GoogleSyncModalProps {
   isOpen: boolean;
@@ -22,10 +27,11 @@ interface GoogleSyncModalProps {
 }
 
 export const GoogleSyncModal: React.FC<GoogleSyncModalProps> = ({ isOpen, onClose }) => {
+  useLocale();
   const {
     profile,
-    connectGoogleAccount,
-    disconnectGoogleAccount,
+    cloudSnapshot, cloudHasLocalChanges, refreshCloudBackup, restoreCloudBackup,
+    hasRecoveryBackup, exportRecoveryBackupJSON,
     syncWithCloud,
     isSyncing,
     lastSyncedAt,
@@ -34,13 +40,17 @@ export const GoogleSyncModal: React.FC<GoogleSyncModalProps> = ({ isOpen, onClos
     importBackupJSON
   } = useFitness();
 
-  const [inputEmail, setInputEmail] = useState<string>(profile.email || '');
+  const auth = useAuth();
+  const { user, guest } = auth;
+  const canUseCloud = Boolean(user?.emailVerified && !guest);
+  const [cloudConsent, setCloudConsent] = useState(false);
   const [syncSuccessMsg, setSyncSuccessMsg] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
   const [exporting, setExporting] = useState(false);
   const [backupMessage, setBackupMessage] = useState('');
   const [backupText, setBackupText] = useState('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const handleExport = async () => {
     if (exporting) return;
     setExporting(true); setBackupMessage('');
@@ -59,28 +69,28 @@ export const GoogleSyncModal: React.FC<GoogleSyncModalProps> = ({ isOpen, onClos
     catch { setBackupMessage('Select the backup text and use your phone’s Copy command.'); }
   };
 
-  const handleConnect = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputEmail.trim()) return;
-
-    const ok = await connectGoogleAccount(inputEmail.trim());
-    if (ok) {
-      setSyncSuccessMsg('Successfully linked account and synced data with the cloud!');
-      setTimeout(() => setSyncSuccessMsg(null), 4000);
-    }
-  };
-
-  const handleManualSync = async () => {
-    await syncWithCloud();
-    setSyncSuccessMsg('Cloud backup updated successfully!');
-    setTimeout(() => setSyncSuccessMsg(null), 3000);
+  const handleCloud = async (operation: 'check' | 'save' | 'restore') => {
+    setSyncSuccessMsg(null); setImportError(null);
+    if (!canUseCloud || !cloudConsent || isSyncing) return;
+    if (operation === 'save' && cloudSnapshot && !window.confirm(t('Replace the existing cloud backup with the fitness data on this device? Data from another device will be replaced.'))) return;
+    if (operation === 'restore' && !window.confirm(t("Replace this device's profile and fitness records with the cloud backup? A pre-restore copy will be saved on this device. Export it afterward if needed."))) return;
+    try {
+      if (operation === 'check') { await refreshCloudBackup(); setSyncSuccessMsg('Cloud backup checked.'); }
+      if (operation === 'save') { await syncWithCloud(); setSyncSuccessMsg('Cloud backup saved. Future changes need another backup.'); }
+      if (operation === 'restore') { await restoreCloudBackup(); setSyncSuccessMsg('Cloud backup restored on this device.'); }
+    } catch (error) { setImportError(cloudBackupError(error)); }
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    e.target.value = '';
+    if (isSyncing || !window.confirm(t("Replace this device's profile and fitness records with this file? A pre-restore copy will be saved on this device."))) return;
+    if (file.size > 20_000_000) { setImportError('This backup file is too large to import.'); return; }
+    setSyncSuccessMsg(null); setImportError(null);
     const reader = new FileReader();
+    reader.onerror = () => setImportError('The backup file could not be read.');
     reader.onload = (event) => {
       const content = event.target?.result as string;
       const success = importBackupJSON(content);
@@ -88,7 +98,7 @@ export const GoogleSyncModal: React.FC<GoogleSyncModalProps> = ({ isOpen, onClos
         setSyncSuccessMsg('Backup imported successfully!');
         setTimeout(() => setSyncSuccessMsg(null), 3000);
       } else {
-        setImportError('Invalid backup file format.');
+        setImportError('Backup could not be imported. Check its format and available device storage.');
       }
     };
     reader.readAsText(file);
@@ -118,8 +128,8 @@ export const GoogleSyncModal: React.FC<GoogleSyncModalProps> = ({ isOpen, onClos
               <Cloud className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Backup & Gemini</h2>
-              <p className="text-xs text-slate-400">Save your data and configure AI</p>
+              <h2 className="text-base font-bold text-white">{t("Backup & Gemini")}</h2>
+              <p className="text-xs text-slate-400">{t("Save your data and configure AI")}</p>
             </div>
           </div>
           <button
@@ -132,14 +142,34 @@ export const GoogleSyncModal: React.FC<GoogleSyncModalProps> = ({ isOpen, onClos
 
         <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
           {/* Status Badge Card */}
-          <p className="text-xs text-slate-400">Your data is saved on this device. Google account sign-in and cloud backup are not configured in this version. Entering an email does not connect a Google account.</p>
+          <section className="space-y-3 rounded-xl border border-slate-700 p-3" aria-label={t("Cloud backup")}>
+            <h3 className="text-sm font-semibold text-white">{t("Private cloud backup")}</h3>
+            <p className="text-xs text-slate-400">{t("Your fitness data stays on this device until you choose Back up now. Each verified account has one private cloud backup. Passwords and Gemini API keys are excluded. Changes are not backed up automatically.")}</p>
+            {t(canUseCloud ? <>
+              <p className="text-xs text-slate-300 break-all">{t(user?.email)}</p>
+              <label className="flex items-start gap-2 text-xs text-slate-300">
+                <input type="checkbox" checked={cloudConsent} onChange={e => setCloudConsent(e.target.checked)} disabled={isSyncing} className="mt-0.5" />
+                <span>{t("I want to use private cloud backup for my profile and fitness records.")}</span>
+              </label>
+              <p role="status" className="text-xs text-amber-300">{t(cloudHasLocalChanges ? 'Local data needs a backup, or has not been backed up in this session.' : 'Local data matches the last backup saved or restored in this session.')}</p>
+              {t(lastSyncedAt && <p className="text-xs text-slate-400">{t("Last backup saved or restored: ")}{t(new Date(lastSyncedAt).toLocaleString(localeTag()))}</p>)}
+              {t(cloudSnapshot === null && <p className="text-xs text-slate-400">{t("No cloud backup exists for this account yet.")}</p>)}
+              {t(cloudSnapshot && <p className="text-xs text-slate-400">{t("Cloud backup date: ")}{t(new Date(cloudSnapshot.updatedAt).toLocaleString(localeTag()))}</p>)}
+              <button type="button" onClick={() => handleCloud('check')} disabled={!cloudConsent || isSyncing} className="w-full rounded-xl bg-slate-800 px-3 py-2 text-xs font-semibold text-cyan-300 disabled:opacity-40">{t(isSyncing ? 'Working…' : 'Check cloud backup')}</button>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => handleCloud('save')} disabled={!cloudConsent || isSyncing || cloudSnapshot === undefined} className="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">{t("Back up now")}</button>
+                <button type="button" onClick={() => handleCloud('restore')} disabled={!cloudConsent || isSyncing || !cloudSnapshot} className="rounded-xl bg-slate-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">{t("Restore cloud backup")}</button>
+              </div>
+              <p className="text-xs text-slate-400">{t("Check cloud backup first. Saving replaces the account's previous cloud copy; restoring replaces this device's records.")}</p>
+            </> : <p className="text-xs text-amber-300">{t("Sign in with a verified account to use cloud backup. Guest data can still be exported below.")}</p>)}
+          </section>
           <GeminiSetup />
-          {syncSuccessMsg && <p role="status" className="text-xs text-emerald-300">{syncSuccessMsg}</p>}
-          {importError && <p role="alert" className="text-xs text-rose-300">{importError}</p>}
+          {t(syncSuccessMsg && <p role="status" className="text-xs text-emerald-300">{t(syncSuccessMsg)}</p>)}
+          {t(importError && <p role="alert" className="text-xs text-rose-300">{t(importError)}</p>)}
 
           {/* Export & Import Offline Backups */}
           <div className="pt-2 border-t border-slate-800 space-y-3">
-            <span className="text-xs font-semibold text-slate-300 block">Offline Backup & Export</span>
+            <span className="text-xs font-semibold text-slate-300 block">{t("Offline Backup & Export")}</span>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -148,33 +178,36 @@ export const GoogleSyncModal: React.FC<GoogleSyncModalProps> = ({ isOpen, onClos
                 className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
               >
                 <Download className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{exporting ? 'Opening export…' : 'Export JSON'}</span>
+                <span>{t(exporting ? 'Opening export…' : 'Export JSON')}</span>
               </button>
 
               <label className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer text-center">
                 <Upload className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Import Backup</span>
-                <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
+                <span>{t("Import Backup")}</span>
+                <input type="file" accept=".json" onChange={handleImportFile} disabled={isSyncing} className="hidden" />
               </label>
             </div>
 
-            <p className="text-xs text-slate-400">Backups include your profile and fitness logs. Save them to a location you control.</p>
-            {backupMessage && <p role="status" className="text-xs text-amber-300">{backupMessage}</p>}
-            <button type="button" onClick={() => setBackupText(backupText ? '' : getBackupJSON())} className="text-xs text-cyan-300 underline">{backupText ? 'Hide backup text' : 'View / copy backup text'}</button>
-            {backupText && <div className="space-y-2">
-              <textarea aria-label="JSON backup text" readOnly value={backupText} onFocus={e => e.currentTarget.select()} className="w-full h-40 p-2 rounded-xl bg-slate-950 text-xs text-slate-200 font-mono" />
-              <button type="button" onClick={handleCopyBackup} className="text-xs text-cyan-300 underline">Copy backup text</button>
-            </div>}
-            {profile.isGoogleConnected && (
-              <button
-                type="button"
-                onClick={disconnectGoogleAccount}
-                className="w-full py-2 text-xs text-rose-400 hover:text-rose-300 font-semibold text-center transition-colors"
-              >
-                Disconnect Cloud Sync
-              </button>
-            )}
+            <p className="text-xs text-slate-400">{t("Backups include your profile and fitness logs. Save them to a location you control.")}</p>
+            {t(backupMessage && <p role="status" className="text-xs text-amber-300">{t(backupMessage)}</p>)}
+            <button type="button" onClick={() => setBackupText(backupText ? '' : getBackupJSON())} className="text-xs text-cyan-300 underline">{t(backupText ? 'Hide backup text' : 'View / copy backup text')}</button>
+            {t(backupText && <div className="space-y-2">
+              <textarea aria-label={t("JSON backup text")} readOnly value={backupText} onFocus={e => e.currentTarget.select()} className="w-full h-40 p-2 rounded-xl bg-slate-950 text-xs text-slate-200 font-mono" />
+              <button type="button" onClick={handleCopyBackup} className="text-xs text-cyan-300 underline">{t("Copy backup text")}</button>
+            </div>)}
+            {t(hasRecoveryBackup && <button type="button" onClick={async () => {
+              try {
+                const result = await exportRecoveryBackupJSON();
+                setBackupMessage(result === 'share' ? 'Choose a destination and save the pre-restore copy.' : 'Pre-restore copy download requested. Check your Downloads.');
+              } catch { setBackupMessage('The pre-restore copy could not be exported. Try again.'); }
+            }} className="text-xs text-cyan-300 underline">{t("Export pre-restore copy")}</button>)}
           </div>
+          {t(canUseCloud && <section className="space-y-2 border-t border-rose-900/60 pt-4" aria-label={t("Delete account")}>
+            <h3 className="text-sm font-semibold text-rose-300">{t("Delete account")}</h3>
+            <p className="text-xs text-slate-400">{t("This permanently deletes your login, private cloud backup, and this account's local fitness records. It does not delete guest records. Type DELETE to continue.")}</p>
+            <input aria-label={t("Type DELETE to confirm")} value={deleteConfirmation} onChange={e=>setDeleteConfirmation(e.target.value)} placeholder={t("DELETE")} className="w-full rounded-xl border border-rose-900 bg-slate-950 px-3 py-2 text-sm" />
+            <button type="button" disabled={!canConfirmAccountDeletion(deleteConfirmation)||isSyncing} onClick={async()=>{if(!window.confirm(t('Delete this account permanently? This cannot be undone.')))return;setImportError(null);try{await auth.deleteAccount();}catch(error){setImportError(cloudBackupError(error));}}} className="w-full rounded-xl bg-rose-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40">{t("Delete my account")}</button>
+          </section>)}
         </div>
       </motion.div>
     </div>

@@ -1,3 +1,5 @@
+/* localized-render */
+import { t, useLocale, localeTag, matchesLocalized } from "../utils/locale";
 import React, { useState } from 'react';
 
 const icons: [RegExp, string][] = [
@@ -22,10 +24,11 @@ export function foodIllustration(name: string) {
 }
 
 export function FoodThumbnail({ name, imageUrl, large = false }: { name: string; imageUrl?: string; large?: boolean }) {
+  useLocale();
   const [failedUrl, setFailedUrl] = useState('');
   const photo = imageUrl?.startsWith('https://') && failedUrl !== imageUrl;
   return <img src={photo ? imageUrl : foodIllustration(name)}
-    alt={photo ? name : `Illustration for ${name}`} loading="lazy" decoding="async" referrerPolicy="no-referrer"
+    alt={t(photo ? name : `Illustration for ${name}`)} loading="lazy" decoding="async" referrerPolicy="no-referrer"
     onError={() => { if (imageUrl) setFailedUrl(imageUrl); }}
     className={`${large ? 'w-20 h-20' : 'w-12 h-12'} shrink-0 rounded-xl ${photo ? 'object-cover' : 'object-contain p-2'} bg-slate-800`} />;
 }

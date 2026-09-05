@@ -7,12 +7,16 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWith
   sendEmailVerification, sendPasswordResetEmail, signOut, reload, updateProfile,
   setPersistence, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence,
   initializeAuth, GoogleAuthProvider, signInWithCredential, signInWithPopup, type User } from 'firebase/auth';
+import { deleteUser } from 'firebase/auth';
+import { deleteDoc, doc, getFirestore } from 'firebase/firestore';
 import config from '../config/firebase.json';
 import { clearGeminiKey } from '../utils/gemini';
+import { accountStorageKeys } from '../utils/account';
 
 const configured = Boolean(config.apiKey && config.projectId && config.authDomain && config.appId);
 const app = configured ? initializeApp(config) : null;
 const auth = app ? (Capacitor.isNativePlatform() ? initializeAuth(app,{persistence:indexedDBLocalPersistence}) : getAuth(app)) : null;
+export { app as firebaseApp, auth as firebaseAuth };
 const durablePersistence = Capacitor.isNativePlatform() ? indexedDBLocalPersistence : browserLocalPersistence;
 const guestKey = 'fittrack_guest_mode_v1';
 type AuthState = {
@@ -23,6 +27,7 @@ type AuthState = {
   resetPassword: (email:string)=>Promise<void>;
   resendVerification: ()=>Promise<void>; checkVerification: ()=>Promise<boolean>;
   continueAsGuest: ()=>void; logout: ()=>Promise<void>;
+  deleteAccount: ()=>Promise<void>;
 };
 const AuthContext = createContext<AuthState | null>(null);
 
@@ -55,6 +60,7 @@ export function AuthProvider({children}:{children:React.ReactNode}) {
     resendVerification:async()=>{const current=requireAuth().currentUser;if(!current)throw new Error('Sign in first.');await sendEmailVerification(current);},
     checkVerification:async()=>{const current=requireAuth().currentUser;if(!current)return false;await reload(current);await current.getIdToken(true);setUser(current);setRevision(n=>n+1);return current.emailVerified;},
     continueAsGuest:()=>{if(user)return;clearGeminiKey();localStorage.setItem(guestKey,'true');setGuest(true);},
+    deleteAccount:async()=>{const current=requireAuth().currentUser;if(!current||!app)throw new Error('Sign in first.');const uid=current.uid;await deleteDoc(doc(getFirestore(app),'fitnessBackups',uid));await deleteUser(current);const keys=accountStorageKeys(uid);Object.values(keys).forEach(key=>localStorage.removeItem(key));clearGeminiKey();stopGuest();setUser(null);},
     logout:async()=>{
       if(auth)await signOut(auth);
       clearGeminiKey();stopGuest();setUser(null);
@@ -65,3 +71,4 @@ export function AuthProvider({children}:{children:React.ReactNode}) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export function useAuth(){const value=useContext(AuthContext);if(!value)throw new Error('Missing AuthProvider');return value;}
+

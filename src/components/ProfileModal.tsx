@@ -1,3 +1,5 @@
+/* localized-render */
+import { t, useLocale, localeTag, matchesLocalized } from "../utils/locale";
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
@@ -32,6 +34,7 @@ interface ProfileModalProps {
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
+  useLocale();
   const auth = useAuth();
   const [signOutError, setSignOutError] = useState('');
   const { profile, updateProfile } = useFitness();
@@ -96,13 +99,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Profile & Biometrics</h2>
-              <p className="text-xs text-slate-400">Mifflin-St Jeor TDEE & macro targets</p>
+              <h2 className="text-base font-bold text-white">{t("Profile & Biometrics")}</h2>
+              <p className="text-xs text-slate-400">{t("Mifflin-St Jeor TDEE & macro targets")}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close Profile"
+            aria-label={t("Close Profile")}
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -111,15 +114,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
 
         <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
           <div className="p-3 rounded-xl bg-slate-800 text-xs space-y-2">
-            <p className="text-slate-300 break-words">{auth.user ? `Signed in as ${auth.user.email}` : 'Using this device without an account'}</p>
-            <button type="button" className="text-cyan-300 underline" onClick={async()=>{try{await auth.logout();}catch{setSignOutError('Could not sign out. Try again.');}}}>{auth.user ? 'Sign out' : 'Go to sign in'}</button>
-            <p className="text-slate-400">Signing out keeps your fitness records on this device.</p>
-            {signOutError && <p role="alert" className="text-rose-300">{signOutError}</p>}
+            <p className="text-slate-300 break-words">{t(auth.user ? `Signed in as ${auth.user.email}` : 'Using this device without an account')}</p>
+            <button type="button" className="text-cyan-300 underline" onClick={async()=>{try{await auth.logout();}catch{setSignOutError('Could not sign out. Try again.');}}}>{t(auth.user ? 'Sign out' : 'Go to sign in')}</button>
+            <p className="text-slate-400">{t("Signing out keeps your fitness records on this device.")}</p>
+            {t(signOutError && <p role="alert" className="text-rose-300">{t(signOutError)}</p>)}
           </div>
           {/* Identity & Biological Sex */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">{t("Full Name")}</label>
               <input
                 type="text"
                 value={name}
@@ -129,15 +132,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Biological Sex (for BMR)</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">{t("Biological Sex (for BMR)")}</label>
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value as Gender)}
                 className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-medium focus:border-emerald-500 focus:outline-none capitalize"
               >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other / Non-binary</option>
+                <option value="male">{t("Male")}</option>
+                <option value="female">{t("Female")}</option>
+                <option value="other">{t("Other / Non-binary")}</option>
               </select>
             </div>
           </div>
@@ -145,7 +148,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           {/* Measurements */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Age</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">{t("Age")}</label>
               <input
                 type="number"
                 min={12}
@@ -156,7 +159,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Height (cm)</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">{t("Height (cm)")}</label>
               <input
                 type="number"
                 min={100}
@@ -167,7 +170,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Weight (kg)</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">{t("Weight (kg)")}</label>
               <input
                 type="number"
                 step="0.1"
@@ -183,32 +186,31 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           {/* Goal & Activity Level */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Activity Level</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">{t("Activity Level")}</label>
               <select
                 value={activityLevel}
                 onChange={(e) => setActivityLevel(e.target.value as ActivityLevel)}
                 className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-medium focus:border-emerald-500 focus:outline-none"
               >
-                {(Object.keys(ACTIVITY_MULTIPLIERS) as ActivityLevel[]).map((k) => (
+                {t((Object.keys(ACTIVITY_MULTIPLIERS) as ActivityLevel[]).map((k) => (
                   <option key={k} value={k}>
-                    {ACTIVITY_MULTIPLIERS[k].label} (x{ACTIVITY_MULTIPLIERS[k].multiplier})
+                    {t(ACTIVITY_MULTIPLIERS[k].label)}{t(" (x")}{t(ACTIVITY_MULTIPLIERS[k].multiplier)})
                   </option>
-                ))}
+                )))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Primary Objective</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1">{t("Primary Objective")}</label>
               <select
                 value={goal}
                 onChange={(e) => setGoal(e.target.value as FitnessGoal)}
                 className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-medium focus:border-emerald-500 focus:outline-none"
               >
-                {(Object.keys(GOAL_ADJUSTMENTS) as FitnessGoal[]).map((k) => (
+                {t((Object.keys(GOAL_ADJUSTMENTS) as FitnessGoal[]).map((k) => (
                   <option key={k} value={k}>
-                    {GOAL_ADJUSTMENTS[k].label} ({GOAL_ADJUSTMENTS[k].calorieDelta >= 0 ? '+' : ''}{GOAL_ADJUSTMENTS[k].calorieDelta} kcal)
-                  </option>
-                ))}
+                    {t(GOAL_ADJUSTMENTS[k].label)} ({t(GOAL_ADJUSTMENTS[k].calorieDelta >= 0 ? '+' : '')}{t(GOAL_ADJUSTMENTS[k].calorieDelta)}{t(" kcal) ")}</option>
+                )))}
               </select>
             </div>
           </div>
@@ -216,10 +218,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           {/* Step Calorie Integration Toggle */}
           <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-xs font-bold text-white block">Include Step Burn in Eating Budget</span>
-              <p className="text-[11px] text-slate-400">
-                When enabled, phone step calories expand your remaining daily eating allowance.
-              </p>
+              <span className="text-xs font-bold text-white block">{t("Include Step Burn in Eating Budget")}</span>
+              <p className="text-[11px] text-slate-400">{t(" When enabled, phone step calories expand your remaining daily eating allowance. ")}</p>
             </div>
             <button
               id="toggle-steps-profile"
@@ -240,30 +240,28 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           {/* Calculated Output Matrix */}
           <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-3">
             <span className="text-xs font-bold text-white flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              Calculated Calorie & Macro Target
-            </span>
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />{t(" Calculated Calorie & Macro Target ")}</span>
 
             <div className="grid grid-cols-4 gap-2 text-center">
               <div className="p-2 bg-slate-900 rounded-xl">
-                <span className="text-[10px] text-slate-400 block">Daily Target</span>
-                <span className="text-sm font-extrabold text-emerald-400 mt-0.5 block">{preview.targetCalories}</span>
-                <span className="text-[9px] text-slate-500">kcal</span>
+                <span className="text-[10px] text-slate-400 block">{t("Daily Target")}</span>
+                <span className="text-sm font-extrabold text-emerald-400 mt-0.5 block">{t(preview.targetCalories)}</span>
+                <span className="text-[9px] text-slate-500">{t("kcal")}</span>
               </div>
               <div className="p-2 bg-slate-900 rounded-xl">
-                <span className="text-[10px] text-rose-400 block">Protein</span>
-                <span className="text-sm font-extrabold text-white mt-0.5 block">{preview.targetProtein}g</span>
-                <span className="text-[9px] text-slate-500">macros</span>
+                <span className="text-[10px] text-rose-400 block">{t("Protein")}</span>
+                <span className="text-sm font-extrabold text-white mt-0.5 block">{t(preview.targetProtein)}{t("g")}</span>
+                <span className="text-[9px] text-slate-500">{t("macros")}</span>
               </div>
               <div className="p-2 bg-slate-900 rounded-xl">
-                <span className="text-[10px] text-amber-400 block">Carbs</span>
-                <span className="text-sm font-extrabold text-white mt-0.5 block">{preview.targetCarbs}g</span>
-                <span className="text-[9px] text-slate-500">macros</span>
+                <span className="text-[10px] text-amber-400 block">{t("Carbs")}</span>
+                <span className="text-sm font-extrabold text-white mt-0.5 block">{t(preview.targetCarbs)}{t("g")}</span>
+                <span className="text-[9px] text-slate-500">{t("macros")}</span>
               </div>
               <div className="p-2 bg-slate-900 rounded-xl">
-                <span className="text-[10px] text-blue-400 block">Fats</span>
-                <span className="text-sm font-extrabold text-white mt-0.5 block">{preview.targetFat}g</span>
-                <span className="text-[9px] text-slate-500">macros</span>
+                <span className="text-[10px] text-blue-400 block">{t("Fats")}</span>
+                <span className="text-sm font-extrabold text-white mt-0.5 block">{t(preview.targetFat)}{t("g")}</span>
+                <span className="text-[9px] text-slate-500">{t("macros")}</span>
               </div>
             </div>
           </div>
@@ -274,7 +272,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>Save & Apply Target Changes</span>
+            <span>{t("Save & Apply Target Changes")}</span>
           </button>
         </form>
       </motion.div>

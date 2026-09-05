@@ -1,3 +1,5 @@
+/* localized-render */
+import { t, useLocale, localeTag, matchesLocalized } from "../utils/locale";
 import React from 'react';
 import {
   Flame,
@@ -35,6 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab
 }) => {
+  useLocale();
   const { profile, currentDate, setCurrentDate } = useFitness();
 
   const handlePrevDay = () => {
@@ -60,14 +63,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div className="hidden sm:block">
             <h1 className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
-              <span>NutriFit</span>
-              <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
-                PRO
-              </span>
+              <span>{t("NutriFit")}</span>
+              <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">{t(" PRO ")}</span>
             </h1>
-            <span className="text-[10px] text-slate-400 block font-medium">
-              USDA & Open Food Facts
-            </span>
+            <span className="text-[10px] text-slate-400 block font-medium">{t(" USDA & Open Food Facts ")}</span>
           </div>
         </div>
 
@@ -76,20 +75,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={handlePrevDay}
             className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
-            title="Previous Day"
+            title={t("Previous Day")}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
           <div className="px-3 flex items-center gap-2 text-xs font-bold text-white">
             <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{isToday ? `Today, ${formattedDate}` : formattedDate}</span>
+            <span>{isToday ? <>{t("Today")}, {formattedDate}</> : formattedDate}</span>
           </div>
 
           <button
             onClick={handleNextDay}
             className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
-            title="Next Day"
+            title={t("Next Day")}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -103,10 +102,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={onOpenBarcodeScanner}
             className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/25 text-cyan-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
-            title="Open Barcode Scanner (Open Food Facts)"
+            title={t("Open Barcode Scanner (Open Food Facts)")}
           >
             <Barcode className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Barcode</span>
+            <span className="hidden sm:inline">{t("Barcode")}</span>
           </button>
 
           {/* Scientific References Tag / Button */}
@@ -115,10 +114,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={onOpenReferences}
             className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
-            title="View Official Scientific References & Clinical Formulas"
+            title={t("View Official Scientific References & Clinical Formulas")}
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden md:inline">References</span>
+            <span className="hidden md:inline">{t("References")}</span>
           </button>
 
           {/* Cloud Sync Button */}
@@ -131,12 +130,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
                 : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
             }`}
-            title="Backup & Gemini setup"
+            title={t("Backup & Gemini setup")}
           >
             <Cloud className="w-3.5 h-3.5 text-blue-400" />
-            <span className="hidden lg:inline">
-              Backup & AI
-            </span>
+            <span className="hidden lg:inline">{t(" Backup & AI ")}</span>
           </button>
 
           {/* Profile Editor */}
@@ -145,11 +142,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={onOpenProfile}
             className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 transition-colors flex items-center gap-2"
-            title="User Profile & Calorie Goals"
+            title={t("User Profile & Calorie Goals")}
           >
             <User className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold text-slate-200 hidden md:inline truncate max-w-[90px]">
-              {profile.name || 'Profile'}
+              {t(profile.name || 'Profile')}
             </span>
           </button>
         </div>

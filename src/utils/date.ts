@@ -1,3 +1,4 @@
+import {localeTag} from './locale';
 export const getTodayDateString = (): string => {
   const d = new Date();
   const year = d.getFullYear();
@@ -47,7 +48,7 @@ export const isDateToday = (dateStr: string): boolean => {
 export const formatDateDisplay = (dateStr: string): string => {
   const { year, month, day } = parseDateParts(dateStr);
   const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString(localeTag(), {
     weekday: 'short',
     month: 'short',
     day: 'numeric'
