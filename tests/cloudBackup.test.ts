@@ -14,13 +14,20 @@ test('backup round trip retains fitness records',()=>{
 test('backup retains reminder choices, completion, and micronutrients',()=>{
  const value:any=sample();
  value.profile.reminderSetupCompleted=true;
- value.profile.reminders={enabled:true,mealTimes:{breakfast:'08:00'},water:{enabled:true,start:'09:00',end:'21:00',intervalMinutes:120},supplements:[{id:'d',name:'Vitamin D',amount:'1 tablet',time:'10:00',enabled:true}]};
+ value.profile.reminders={enabled:true,mealTimes:{breakfast:'08:00'},water:{enabled:true,start:'09:00',end:'21:00',intervalMinutes:120},supplements:[{id:'d',name:'Vitamin D',amount:'1 tablet',time:'10:00',enabled:true,nutrients:{vitaminDmcg:10}}]};
  value.dailyLogs['2026-09-03'].waterLoggedAt=['2026-09-03T09:05:00.000Z'];value.dailyLogs['2026-09-03'].supplementsTaken=['d'];
+ value.dailyLogs['2026-09-03'].nutrientIntakes=[{id:'nutrient_1',nutrient:'vitaminCmg',amount:75,unit:'mg',sourceType:'manual',sourceName:'Vitamin C',note:'With breakfast',loggedAt:'2026-09-03T08:00:00.000Z'}];
  value.customFoods=[{id:'f',name:'Food',servingSize:'100 g',servingGrams:100,calories:1,protein:1,carbs:1,fat:1,calciumMg:22,vitaminDmcg:3,source:'custom'}];
  const result:any=parseBackup(serializeBackup(value));
  assert.equal(result.profile.reminders.supplements[0].name,'Vitamin D');
+ assert.equal(result.profile.reminders.supplements[0].nutrients.vitaminDmcg,10);
  assert.deepEqual(result.dailyLogs['2026-09-03'].supplementsTaken,['d']);
+ assert.equal(result.dailyLogs['2026-09-03'].nutrientIntakes[0].amount,75);
  assert.equal(result.customFoods[0].calciumMg,22);
+});
+test('older backups remain valid without nutrient intake entries',()=>{
+ const result=parseBackup(JSON.stringify(sample()));
+ assert.equal(result.dailyLogs['2026-09-03'].nutrientIntakes,undefined);
 });
 test('secret and unknown fields cannot enter cloud or file backup',()=>{
  const value:any=sample();value.apiKey='secret-top';value.profile.password='secret-password';value.dailyLogs['2026-09-03'].geminiKey='secret-nested';

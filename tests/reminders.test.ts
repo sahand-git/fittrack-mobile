@@ -30,3 +30,9 @@ test('water reminders stop after the daily target', () => {
   const plan = buildReminderPlan(settings, { '2026-09-06': { meals: { breakfast: [], lunch: [], dinner: [], snack: [] }, waterMl: 2000 } }, new Date('2026-09-06T07:00:00'), 1, 2000);
   assert.ok(!plan.some(item => item.key.startsWith('water:')));
 });
+
+test('disabled scheduling emits no phone notifications without erasing saved choices', () => {
+  const disabled = { ...settings, enabled: false };
+  assert.deepEqual(buildReminderPlan(disabled, {}, new Date('2026-09-06T07:00:00'), 3), []);
+  assert.equal(disabled.supplements[0].name, 'Vitamin D');
+});

@@ -1,6 +1,6 @@
 /* localized-render */
 import { t, useLocale, localeTag, matchesLocalized } from "../utils/locale";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   User,
@@ -15,7 +15,8 @@ import {
   Sparkles,
   Info,
   LogOut,
-  Mail
+  Mail,
+  Bell
 } from 'lucide-react';
 import { useFitness } from '../context/FitnessContext';
 import { useAuth } from '../context/AuthContext';
@@ -25,18 +26,21 @@ import {
   GOAL_ADJUSTMENTS,
   calculateTargets
 } from '../utils/calculator';
+import { NotificationSchedulePanel } from './NotificationSchedulePanel';
 
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialSection?: 'profile' | 'notifications';
   activeTab?: string;
   setActiveTab?: (tab: string) => void;
 }
 
-export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
+export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, initialSection = 'profile' }) => {
   useLocale();
   const auth = useAuth();
   const [signOutError, setSignOutError] = useState('');
+  const [section, setSection] = useState<'profile' | 'notifications'>(initialSection);
   const { profile, updateProfile } = useFitness();
 
   const [name, setName] = useState<string>(profile.name);
@@ -53,6 +57,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   );
   const [stepGoal, setStepGoal] = useState<number>(profile.stepGoal);
   const [waterGoalMl, setWaterGoalMl] = useState<number>(profile.waterGoalMl);
+
+  useEffect(() => { if (isOpen) setSection(initialSection); }, [initialSection, isOpen]);
 
   const preview = calculateTargets(gender, weightKg, heightCm, age, activityLevel, goal);
 
@@ -80,7 +86,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   return (
     <div
       id="profile-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 app-modal-backdrop"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -89,18 +95,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[88dvh]"
+        className="app-modal w-full max-w-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900 shrink-0">
+        <div className="app-modal-header items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <div className="app-icon-tile">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">{t("Profile & Biometrics")}</h2>
-              <p className="text-xs text-slate-400">{t("Mifflin-St Jeor TDEE & macro targets")}</p>
+              <h2 className="text-base font-bold text-white">{t("Settings")}</h2>
+              <p className="text-xs text-slate-400">{t("Profile, goals, and notification schedule")}</p>
             </div>
           </div>
           <button
@@ -112,7 +118,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
+        <div className="app-tab-list mx-4 sm:mx-5 mt-4" role="tablist" aria-label={t('Settings section')}>
+          <button type="button" role="tab" aria-selected={section === 'profile'} onClick={() => setSection('profile')} className={`app-tab ${section === 'profile' ? 'app-tab-active' : ''}`}><User className="w-4 h-4" />{t('Profile')}</button>
+          <button type="button" role="tab" aria-selected={section === 'notifications'} onClick={() => setSection('notifications')} className={`app-tab ${section === 'notifications' ? 'app-tab-active' : ''}`}><Bell className="w-4 h-4" />{t('Notifications & Schedule')}</button>
+        </div>
+
+        {section === 'profile' && <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
           <div className="p-3 rounded-xl bg-slate-800 text-xs space-y-2">
             <p className="text-slate-300 break-words">{t(auth.user ? `Signed in as ${auth.user.email}` : 'Using this device without an account')}</p>
             <button type="button" className="text-cyan-300 underline" onClick={async()=>{try{await auth.logout();}catch{setSignOutError('Could not sign out. Try again.');}}}>{t(auth.user ? 'Sign out' : 'Go to sign in')}</button>
@@ -274,7 +285,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             <CheckCircle2 className="w-4 h-4" />
             <span>{t("Save & Apply Target Changes")}</span>
           </button>
-        </form>
+        </form>}
+        {section === 'notifications' && <div className="p-4 sm:p-5 overflow-y-auto flex-1"><NotificationSchedulePanel /></div>}
       </motion.div>
     </div>
   );

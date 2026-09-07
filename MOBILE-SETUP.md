@@ -4,6 +4,7 @@ This source update fixes onboarding and replaces the preset-step “Sync” butt
 
 ## What is ready
 
+- Version 1.7 adds editable vitamin and mineral intake records, a separate Supplements area, notification schedules under Settings, a repaired workout duration field, and the Midnight Sage responsive design.
 - First launch collects name, age, body measurements, activity level, and goal. Email is optional. Setup runs locally and no longer claims that entering an email authorizes Google or a health app.
 - Older saved profiles are asked to confirm their details once. Existing meals, workouts, and step logs are retained. Previously inserted demo step totals cannot be reliably distinguished from manually entered totals; correct these using Set Total or a real health read.
 - Android uses Health Connect. Samsung Health must first be configured to write steps to Health Connect. Other apps can supply data if they support Health Connect sharing.
@@ -28,7 +29,7 @@ npx cap sync
 
 ## Gemini and backups in the bundled app
 
-Version 1.2 uses direct Google Gemini API calls with each user's optional session-only API key and explicit consent. Google OAuth is not configured. JSON backup uses native Filesystem and Share plugins. Barcode lookups use Open Food Facts directly. No backend is required for these paths. The old email-only cloud backup endpoint is disabled until real authentication and storage exist.
+The app uses direct Google Gemini API calls with each user's optional session-only API key and explicit consent. JSON backup uses native Filesystem and Share plugins. Barcode lookups use Open Food Facts directly. Cloud backup access remains disabled during friends testing; use JSON export before replacing or uninstalling a test APK.
 
 ## Android
 
@@ -49,7 +50,7 @@ The starter application identifier is `com.sahand.fitness`. Confirm it is the id
 
 ## Checks completed and remaining
 
-Version 1.2 checks passed: TypeScript, frontend production build, 18 unit tests, native plugin sync, Android APK compilation, unsigned iPhone compilation, and browser checks at 320/360/390 pixel widths. Browser checks cover food-picker reset, meat search, JSON download and text fallback, Gemini consent and simulated Smart Text/chat responses. The APK download checksum was verified and its native backup plugins inspected.
+Version 1.7 local checks cover TypeScript, 50 unit tests, the frontend production bundle, manual nutrient add/edit calculations, backward-compatible JSON restore, reminder scheduling, workout duration replacement, and English/Sorani responsive browser inspection. Android APK compilation and real-phone notification checks run through the GitHub workflow and tester devices.
 
 Health and Gemini tests simulate service responses. Real phone sharing, health permission prompts and totals, a live personal Gemini key, stable Android release signing, Apple distribution signing, and app-store review remain unverified. GitHub Actions performed native compilation; this Windows workspace has no Android SDK or Xcode.
 
@@ -62,4 +63,3 @@ Before distributing, test both phones with known daily totals, denied/revoked pe
 - [Android Health Connect setup](https://developer.android.com/health-and-fitness/health-connect/get-started)
 - [Samsung Health sharing through Health Connect](https://developer.samsung.com/health/blog/en/accessing-samsung-health-data-through-health-connect)
 - [Apple Health authorization](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data)
-

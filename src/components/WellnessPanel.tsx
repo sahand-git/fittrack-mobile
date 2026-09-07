@@ -1,86 +1,67 @@
 /* localized-render */
 import React, { useMemo, useState } from 'react';
-import { Bell, Check, Droplets, Pill, Plus, Trash2, X } from 'lucide-react';
-import { useFitness, DEFAULT_REMINDERS } from '../context/FitnessContext';
-import type { MealType, ReminderSettings } from '../types';
-import { MICRONUTRIENT_KEYS, sumMicronutrients, type MicronutrientKey } from '../utils/micronutrients';
-import { enableNotifications, notificationStatus } from '../utils/notifications';
+import { Bell, Check, Edit3, FlaskConical, Plus, Trash2 } from 'lucide-react';
+import { useFitness } from '../context/FitnessContext';
+import type { NutrientIntakeEntry } from '../types';
+import { combineNutrientTotals, MICRONUTRIENT_KEYS, NUTRIENT_META, sumMicronutrients, sumNutrientEntries, type MicronutrientKey, type NutrientGroup } from '../utils/micronutrients';
 import { t, useLocale } from '../utils/locale';
+import { NutrientIntakeModal } from './NutrientIntakeModal';
 
-const labels: Record<MicronutrientKey, [string, string]> = {
-  calciumMg: ['Calcium', 'mg'], ironMg: ['Iron', 'mg'], magnesiumMg: ['Magnesium', 'mg'],
-  potassiumMg: ['Potassium', 'mg'], zincMg: ['Zinc', 'mg'], vitaminCmg: ['Vitamin C', 'mg'],
-  vitaminDmcg: ['Vitamin D', 'mcg'], vitaminB12mcg: ['Vitamin B12', 'mcg']
-};
+interface Props { onOpenNotifications: () => void; }
 
-const cloneSettings = (value?: ReminderSettings): ReminderSettings => JSON.parse(JSON.stringify(value || DEFAULT_REMINDERS));
-
-export function WellnessPanel() {
+export function WellnessPanel({ onOpenNotifications }: Props) {
   useLocale();
-  const { profile, todayLog, updateReminderSettings, markSupplementTaken } = useFitness();
-  const [open, setOpen] = useState(!profile.reminderSetupCompleted);
-  const [settings, setSettings] = useState(() => cloneSettings(profile.reminders));
-  const [message, setMessage] = useState('');
+  const { profile, todayLog, currentDate, markSupplementTaken, addNutrientIntake, updateNutrientIntake, removeNutrientIntake } = useFitness();
+  const [group, setGroup] = useState<NutrientGroup>('vitamin');
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editing, setEditing] = useState<NutrientIntakeEntry>();
+  const [initialSource, setInitialSource] = useState<'manual' | 'supplement'>('manual');
   const foods = Object.values(todayLog.meals).flat();
-  const totals = useMemo(() => sumMicronutrients(foods), [foods]);
-  const updateMeal = (meal: 'breakfast' | 'lunch' | 'dinner', value: string) => setSettings(current => ({ ...current, mealTimes: { ...current.mealTimes, [meal]: value } }));
-
-  const save = async () => {
-    setMessage('');
-    if (settings.enabled) {
-      const state = await notificationStatus();
-      if (state !== 'granted' && !await enableNotifications()) setMessage(t('Notifications are blocked in phone settings. Your times were saved.'));
+  const foodTotals = useMemo(() => sumMicronutrients(foods), [foods]);
+  const entryTotals = useMemo(() => sumNutrientEntries(todayLog.nutrientIntakes || []), [todayLog.nutrientIntakes]);
+  const scheduledTotals = useMemo(() => {
+    const result: Partial<Record<MicronutrientKey, number>> = {};
+    const taken = new Set(todayLog.supplementsTaken || []);
+    for (const supplement of profile.reminders?.supplements || []) {
+      if (!taken.has(supplement.id) || !supplement.nutrients) continue;
+      for (const key of MICRONUTRIENT_KEYS) {
+        const value = supplement.nutrients[key];
+        if (value !== undefined) result[key] = Math.round(((result[key] || 0) + value) * 100) / 100;
+      }
     }
-    updateReminderSettings(settings); setOpen(false);
-  };
-  const addSupplement = () => settings.supplements.length < 5 && setSettings(current => ({ ...current, supplements: [...current.supplements, { id: `supp_${Date.now()}`, name: '', amount: '', time: '09:00', enabled: true }] }));
+    return result;
+  }, [profile.reminders?.supplements, todayLog.supplementsTaken]);
+  const totals = useMemo(() => combineNutrientTotals(foodTotals, entryTotals, scheduledTotals), [foodTotals, entryTotals, scheduledTotals]);
+  const keys = MICRONUTRIENT_KEYS.filter(key => NUTRIENT_META[key].group === group);
+  const entries = (todayLog.nutrientIntakes || []).filter(entry => NUTRIENT_META[entry.nutrient].group === group);
+  const supplements = profile.reminders?.supplements || [];
+
+  const openNew = (source: 'manual' | 'supplement') => { setEditing(undefined); setInitialSource(source); setEditorOpen(true); };
+  const remove = (entry: NutrientIntakeEntry) => { if (window.confirm(t('Delete this intake?'))) removeNutrientIntake(entry.id); };
 
   return <>
-    <section className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-bold text-white flex items-center gap-2"><Pill className="w-5 h-5 text-violet-400" />{t('Vitamins, Minerals & Reminders')}</h3>
-          <p className="text-xs text-slate-400 mt-1">{t('Known nutrients from today’s foods. Missing label values are not counted.')}</p>
-        </div>
-        <button type="button" onClick={() => { setSettings(cloneSettings(profile.reminders)); setOpen(true); }} className="px-4 py-2 rounded-xl bg-violet-500/15 border border-violet-500/30 text-violet-300 text-xs font-bold flex items-center gap-2"><Bell className="w-4 h-4" />{t('Reminder settings')}</button>
+    <section className="app-surface space-y-5" aria-labelledby="nutrition-title">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0"><span className="app-icon-tile"><FlaskConical className="w-5 h-5" /></span><div className="min-w-0"><h3 id="nutrition-title" className="text-base font-bold text-white">{t('Nutrition')}</h3><p className="app-copy text-xs text-slate-400 mt-1">{t('Track nutrients from food and amounts you add yourself.')}</p></div></div>
+        <button type="button" onClick={onOpenNotifications} className="app-icon-button shrink-0" aria-label={t('Notifications & Schedule')} title={t('Notifications & Schedule')}><Bell className="w-5 h-5" /></button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {MICRONUTRIENT_KEYS.map(key => {
-          const total = totals[key]; const [label, unit] = labels[key];
-          return <div key={key} className="rounded-xl bg-slate-800/60 border border-slate-700/60 p-3 min-w-0">
-            <div className="text-[11px] text-slate-400">{t(label)}</div>
-            <div className="font-bold text-sm text-white mt-1">{total ? `${total.value} ${unit}` : t('Not available')}</div>
-            {total && <div className="text-[10px] text-slate-500 mt-1">{t('from')} {total.coverage} {t(total.coverage === 1 ? 'food' : 'foods')}</div>}
-          </div>;
-        })}
-      </div>
-      {!!settings.supplements.length && <div className="flex flex-wrap gap-2">
-        {settings.supplements.filter(item => item.enabled).map(item => {
-          const taken = (todayLog.supplementsTaken || []).includes(item.id);
-          return <button type="button" key={item.id} onClick={() => markSupplementTaken(item.id, !taken)} className={`px-3 py-2 rounded-xl text-xs border flex items-center gap-2 ${taken ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'}`}><Check className="w-4 h-4" />{item.name || t('Supplement')} {taken ? t('Taken') : t('Mark taken')}</button>;
-        })}
-      </div>}
-    </section>
 
-    {open && <div className="fixed inset-0 z-[80] bg-slate-950/85 backdrop-blur-sm p-3 sm:p-6 flex items-center justify-center" role="dialog" aria-modal="true" aria-label={t('Reminder setup')}>
-      <div className="w-full max-w-2xl max-h-[92dvh] overflow-y-auto rounded-3xl bg-slate-900 border border-slate-700 shadow-2xl p-4 sm:p-6 space-y-5">
-        <div className="flex items-start justify-between gap-3">
-          <div><h2 className="text-xl font-black text-white">{t('Choose your reminders')}</h2><p className="text-sm text-slate-400 mt-1">{t('You control every time. You can change these settings later.')}</p></div>
-          <button type="button" aria-label={t('Close')} onClick={() => setOpen(false)} className="shrink-0 p-2 rounded-xl bg-slate-800 text-slate-300"><X className="w-5 h-5" /></button>
-        </div>
-        <label className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-800"><span className="font-bold">{t('Enable phone reminders')}</span><input type="checkbox" checked={settings.enabled} onChange={event => setSettings(current => ({ ...current, enabled: event.target.checked }))} className="w-5 h-5" /></label>
-        <div><h3 className="font-bold mb-2">{t('Meal times')}</h3><div className="grid grid-cols-1 sm:grid-cols-3 gap-2">{(['breakfast','lunch','dinner'] as const).map(meal => <label key={meal} className="text-xs text-slate-400">{t(meal[0].toUpperCase() + meal.slice(1))}<input type="time" value={settings.mealTimes[meal] || ''} onChange={event => updateMeal(meal, event.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white" /></label>)}</div></div>
-        <div className="space-y-2"><h3 className="font-bold flex items-center gap-2"><Droplets className="w-4 h-4 text-cyan-400" />{t('Water reminders')}</h3>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={settings.water.enabled} onChange={event => setSettings(current => ({ ...current, water: { ...current.water, enabled: event.target.checked } }))} />{t('Remind me to drink water')}</label>
-          <div className="grid grid-cols-3 gap-2"><input aria-label={t('Start time')} type="time" value={settings.water.start} onChange={event => setSettings(current => ({ ...current, water: {...current.water, start:event.target.value} }))} className="bg-slate-950 border border-slate-700 rounded-xl p-2" /><input aria-label={t('End time')} type="time" value={settings.water.end} onChange={event => setSettings(current => ({ ...current, water: {...current.water, end:event.target.value} }))} className="bg-slate-950 border border-slate-700 rounded-xl p-2" /><select aria-label={t('Interval')} value={settings.water.intervalMinutes} onChange={event => setSettings(current => ({ ...current, water: {...current.water, intervalMinutes:Number(event.target.value)} }))} className="bg-slate-950 border border-slate-700 rounded-xl p-2"><option value="60">1h</option><option value="120">2h</option><option value="180">3h</option></select></div>
-        </div>
-        <div className="space-y-2"><div className="flex items-center justify-between"><h3 className="font-bold">{t('Supplements')}</h3><button type="button" onClick={addSupplement} disabled={settings.supplements.length >= 5} className="text-xs text-violet-300 flex items-center gap-1 disabled:opacity-40"><Plus className="w-4 h-4" />{t('Add supplement')}</button></div>
-          {settings.supplements.map((item, index) => <div key={item.id} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-2 items-center"><input aria-label={t('Supplement name')} placeholder={t('Vitamin D')} value={item.name} onChange={event => setSettings(current => ({...current,supplements:current.supplements.map((value,i)=>i===index?{...value,name:event.target.value}:value)}))} className="min-w-0 w-full bg-slate-950 border border-slate-700 rounded-xl p-2" /><input aria-label={t('Amount')} placeholder={t('Amount')} value={item.amount} onChange={event => setSettings(current => ({...current,supplements:current.supplements.map((value,i)=>i===index?{...value,amount:event.target.value}:value)}))} className="min-w-0 w-full bg-slate-950 border border-slate-700 rounded-xl p-2" /><input aria-label={t('Time')} type="time" value={item.time} onChange={event => setSettings(current => ({...current,supplements:current.supplements.map((value,i)=>i===index?{...value,time:event.target.value}:value)}))} className="w-full sm:w-[6.5rem] bg-slate-950 border border-slate-700 rounded-xl p-2" /><button type="button" aria-label={t('Delete supplement')} onClick={() => setSettings(current => ({...current,supplements:current.supplements.filter((_,i)=>i!==index)}))} className="justify-self-end p-2 text-rose-400"><Trash2 className="w-4 h-4" /></button></div>)}
-          <p className="text-[11px] text-slate-500">{t('Enter only the supplement and amount you already use. FitTrack does not recommend doses.')}</p>
-        </div>
-        {message && <p className="text-xs text-amber-300">{message}</p>}
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2"><button type="button" onClick={() => { updateReminderSettings({...settings,enabled:false}); setOpen(false); }} className="px-4 py-2 rounded-xl text-slate-400">{t('Skip reminders')}</button><button type="button" onClick={save} className="px-5 py-2 rounded-xl bg-violet-500 text-white font-bold">{t('Save reminder choices')}</button></div>
+      <div className="app-tab-list" role="tablist" aria-label={t('Nutrient group')}>
+        {(['vitamin', 'mineral'] as const).map(value => <button key={value} type="button" role="tab" aria-selected={group === value} onClick={() => setGroup(value)} className={`app-tab ${group === value ? 'app-tab-active' : ''}`}>{t(value === 'vitamin' ? 'Vitamins' : 'Minerals')}</button>)}
       </div>
-    </div>}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {keys.map(key => { const meta = NUTRIENT_META[key]; const total = totals[key]; const added = total.manual + total.supplement; return <article key={key} className="app-surface-muted p-4"><div className="flex items-center justify-between gap-2"><h4 className="text-sm font-bold text-white">{t(meta.label)}</h4><span className="app-unit-pill" dir="ltr">{meta.unit}</span></div><div className="mt-3 text-2xl font-black text-teal-200" dir="ltr">{total.total ? `${total.total} ${meta.unit}` : '—'}</div><dl className="mt-3 grid grid-cols-2 gap-2 text-xs"><div><dt className="text-slate-500">{t('Food')}</dt><dd className="text-slate-200 mt-0.5" dir="ltr">{total.coverage ? `${total.food} ${meta.unit}` : '—'}</dd></div><div><dt className="text-slate-500">{t('Added')}</dt><dd className="text-slate-200 mt-0.5" dir="ltr">{added ? `${added} ${meta.unit}` : '—'}</dd></div></dl></article>; })}
+      </div>
+
+      <div className="flex items-center justify-between gap-3"><h4 className="text-sm font-bold text-white">{t('Today’s entries')}</h4><button type="button" onClick={() => openNew('manual')} className="app-button-primary app-button-compact"><Plus className="w-4 h-4" />{t('Add intake')}</button></div>
+      {entries.length ? <div className="space-y-2">{entries.map(entry => <div key={entry.id} className="app-list-row"><div className="min-w-0"><div className="font-semibold text-sm text-white">{t(NUTRIENT_META[entry.nutrient].label)}</div><div className="app-copy text-xs text-slate-400 mt-1"><span dir="ltr">{entry.amount} {entry.unit}</span>{entry.sourceName ? ` · ${entry.sourceName}` : ''}{` · ${new Date(entry.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}</div>{entry.note && <p className="app-copy text-xs text-slate-500 mt-1">{entry.note}</p>}</div><div className="flex gap-1 shrink-0"><button type="button" className="app-icon-button" aria-label={t('Edit intake')} onClick={() => { setEditing(entry); setEditorOpen(true); }}><Edit3 className="w-4 h-4" /></button><button type="button" className="app-icon-button app-danger" aria-label={t('Delete intake')} onClick={() => remove(entry)}><Trash2 className="w-4 h-4" /></button></div></div>)}</div> : <p className="app-empty-state">{t('No vitamin or mineral intake added for this day.')}</p>}
+
+      <div className="border-t border-slate-700/60 pt-4 space-y-3">
+        <div className="flex items-start justify-between gap-3"><div><h4 className="text-sm font-bold text-white">{t('Supplements')}</h4><p className="app-copy text-xs text-slate-500 mt-1">{t('Log supplements here. Change reminder times in Settings.')}</p></div><button type="button" onClick={() => openNew('supplement')} className="app-button-secondary app-button-compact"><Plus className="w-4 h-4" />{t('Log supplement')}</button></div>
+        {!!supplements.length && <div className="app-scroll-row flex gap-2 pb-1">{supplements.filter(item => item.enabled).map(item => { const taken = (todayLog.supplementsTaken || []).includes(item.id); return <button type="button" key={item.id} onClick={() => markSupplementTaken(item.id, !taken)} className={`app-chip ${taken ? 'app-chip-active' : ''}`}><Check className="w-4 h-4" />{item.name || t('Supplement')} · {taken ? t('Taken') : t('Mark taken')}</button>; })}</div>}
+      </div>
+    </section>
+    {editorOpen && <NutrientIntakeModal isOpen={editorOpen} date={currentDate} entry={editing} initialGroup={editing ? NUTRIENT_META[editing.nutrient].group : group} initialSourceType={initialSource} onClose={() => { setEditorOpen(false); setEditing(undefined); }} onSave={value => editing ? updateNutrientIntake(editing.id, value) : addNutrientIntake(value)} />}
   </>;
 }

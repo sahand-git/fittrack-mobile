@@ -8,6 +8,7 @@ type Validator = (value: unknown) => any;
 const invalid = (): never => { throw new Error('Invalid backup file format.'); };
 const str: Validator = v => typeof v === 'string' ? v : invalid();
 const num: Validator = v => typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : invalid();
+const positive: Validator = v => typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : invalid();
 const bool: Validator = v => typeof v === 'boolean' ? v : invalid();
 const date: Validator = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0,10) === v ? v : invalid();
 const choice = (...values: string[]): Validator => v => values.includes(v as string) ? v : invalid();
@@ -20,14 +21,17 @@ const shape = (fields: Record<string, Validator>): Validator => v => {
  for(const [key,check] of Object.entries(fields)) { const value=check(source[key]); if(value!==undefined) result[key]=value; }
  return result;
 };
-const nutrients={calories:num,protein:num,carbs:num,fat:num,fiber:optional(num),sugars:optional(num),sodium:optional(num),calciumMg:optional(num),ironMg:optional(num),magnesiumMg:optional(num),potassiumMg:optional(num),zincMg:optional(num),vitaminCmg:optional(num),vitaminDmcg:optional(num),vitaminB12mcg:optional(num)};
+const micronutrientFields={calciumMg:optional(num),ironMg:optional(num),magnesiumMg:optional(num),potassiumMg:optional(num),zincMg:optional(num),vitaminCmg:optional(num),vitaminDmcg:optional(num),vitaminB12mcg:optional(num)};
+const nutrients={calories:num,protein:num,carbs:num,fat:num,fiber:optional(num),sugars:optional(num),sodium:optional(num),...micronutrientFields};
 const foodFields={id:str,name:str,brand:optional(str),barcode:optional(str),servingSize:str,servingGrams:num,imageUrl:optional(str),...nutrients};
 const meal=shape({...foodFields,foodId:str,mealType:choice('breakfast','lunch','dinner','snack'),servingsCount:num,loggedAt:str});
 const food=shape({...foodFields,nutriScore:optional(str),ecoScore:optional(str),novaGroup:optional(num),ingredients:optional(str),source:choice('open_food_facts','verified_database','custom','ai_estimated'),category:optional(str)});
 const workout=shape({id:str,name:str,category:choice('strength','cardio','hiit','sports','flexibility'),durationMinutes:num,caloriesBurned:num,loggedAt:str,sets:optional(list(shape({setNum:num,weightKg:num,reps:num,completed:bool})))});
 const report=shape({overallGrade:str,headline:str,caloricBalance:str,macroBreakdown:str,mistakesAndBlindSpots:list(str),actionableTomorrowFixes:list(str),customMealSuggestion:str,coachNote:str,generatedAt:str});
-const day=shape({date,meals:shape({breakfast:list(meal),lunch:list(meal),dinner:list(meal),snack:list(meal)}),waterMl:num,waterLoggedAt:optional(list(str)),supplementsTaken:optional(list(str)),steps:num,stepCaloriesBurned:num,workouts:list(workout),notes:optional(str),aiReport:optional(report)});
-const supplement=shape({id:str,name:str,amount:str,time:str,enabled:bool});
+const nutrientKey=choice('calciumMg','ironMg','magnesiumMg','potassiumMg','zincMg','vitaminCmg','vitaminDmcg','vitaminB12mcg');
+const nutrientIntake=shape({id:str,nutrient:nutrientKey,amount:positive,unit:choice('mg','mcg'),sourceType:choice('manual','supplement'),sourceName:optional(str),note:optional(str),loggedAt:str});
+const day=shape({date,meals:shape({breakfast:list(meal),lunch:list(meal),dinner:list(meal),snack:list(meal)}),waterMl:num,waterLoggedAt:optional(list(str)),supplementsTaken:optional(list(str)),nutrientIntakes:optional(list(nutrientIntake)),steps:num,stepCaloriesBurned:num,workouts:list(workout),notes:optional(str),aiReport:optional(report)});
+const supplement=shape({id:str,name:str,amount:str,time:str,enabled:bool,nutrients:optional(shape(micronutrientFields))});
 const reminders=shape({enabled:bool,mealTimes:shape({breakfast:optional(str),lunch:optional(str),dinner:optional(str)}),water:shape({enabled:bool,start:str,end:str,intervalMinutes:num}),supplements:list(supplement)});
 const profile=shape({name:str,email:str,avatarUrl:optional(str),isGoogleConnected:bool,gender:choice('male','female','other'),age:num,heightCm:num,weightKg:num,targetWeightKg:num,activityLevel:choice('sedentary','light','moderate','very_active','athlete'),goal:choice('fat_loss_aggressive','fat_loss_moderate','maintenance','lean_bulk','muscle_gain'),includeStepsInCalorieBudget:bool,stepGoal:num,waterGoalMl:num,bmr:num,tdee:num,targetCalories:num,targetProtein:num,targetCarbs:num,targetFat:num,profileCompleted:bool,onboardingVersion:optional(num),reminderSetupCompleted:optional(bool),reminders:optional(reminders),customMacroSplit:optional(shape({proteinPercent:num,carbsPercent:num,fatPercent:num}))});
 const backup=shape({version:choice('2.0'),exportedAt:str,profile,dailyLogs:v=>{

@@ -56,6 +56,8 @@ function DashboardContent() {
   const [isAddWorkoutOpen, setIsAddWorkoutOpen] = useState<boolean>(false);
   const [isGoogleSyncOpen, setIsGoogleSyncOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+  const [profileSection, setProfileSection] = useState<'profile' | 'notifications'>('profile');
+  const [reminderPromptShown, setReminderPromptShown] = useState(false);
   const [isReferencesOpen, setIsReferencesOpen] = useState<boolean>(false);
 
   // Global window bridge so any external test or script calling setActiveTab never fails
@@ -89,6 +91,14 @@ function DashboardContent() {
     }
   }, [setActiveTab, activeTab]);
 
+  useEffect(() => {
+    if (profile.profileCompleted && !profile.reminderSetupCompleted && !reminderPromptShown) {
+      setReminderPromptShown(true);
+      setProfileSection('notifications');
+      setIsProfileOpen(true);
+    }
+  }, [profile.profileCompleted, profile.reminderSetupCompleted, reminderPromptShown]);
+
   const handleOpenBarcodeScanner = (meal: MealType = 'lunch') => {
     setSelectedMealForAction(meal);
     setIsBarcodeScannerOpen(true);
@@ -104,17 +114,17 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-slate-950 font-sans pb-28">
+    <div className="min-h-screen bg-[#07120f] text-slate-100 flex flex-col selection:bg-teal-400 selection:text-slate-950 font-sans pb-28">
       {/* Main Top Navigation */}
       <Navbar
-        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenProfile={() => { setProfileSection('profile'); setIsProfileOpen(true); }}
         onOpenGoogleSync={() => setIsGoogleSyncOpen(true)}
         onOpenReferences={() => setIsReferencesOpen(true)}
         onOpenBarcodeScanner={() => handleOpenBarcodeScanner('lunch')}
       />
 
       {/* Main Container */}
-      <main className="max-w-6xl w-full mx-auto px-4 py-6 space-y-6 flex-1">
+      <main className="max-w-6xl w-full mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5 sm:space-y-6 flex-1">
         {/* Daily Summary & Caloric Budget Engine */}
         {t((activeTab === 'dashboard' || activeTab === 'meals' || activeTab === 'workouts' || activeTab === 'steps') && (
           <DailySummary
@@ -134,20 +144,20 @@ function DashboardContent() {
           />
         ))}
 
-        {activeTab === 'dashboard' && <WellnessPanel />}
+        {activeTab === 'dashboard' && <WellnessPanel onOpenNotifications={() => { setProfileSection('notifications'); setIsProfileOpen(true); }} />}
 
         {/* Workouts & Active Exercise Section */}
         {t((activeTab === 'dashboard' || activeTab === 'workouts') && (
-          <div id="workout-section" className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-6 shadow-xl space-y-4">
+          <div id="workout-section" className="app-surface space-y-4">
             <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-800/80">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                <div className="app-icon-tile">
                   <Dumbbell className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white flex flex-wrap items-center gap-2">
                     <span>{t("Exercise & Workout Log")}</span>
-                    <span className="text-[10px] font-semibold whitespace-nowrap shrink-0 px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                    <span className="app-status-badge">
                       {t(todayLog.workouts.length)}{t(" recorded ")}</span>
                   </h3>
                   <p className="text-xs text-slate-400">
@@ -169,7 +179,7 @@ function DashboardContent() {
                   id="btn-add-workout-main"
                   type="button"
                   onClick={() => setIsAddWorkoutOpen(true)}
-                  className="w-full sm:w-auto justify-center whitespace-nowrap shrink-0 px-4 py-2 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-rose-500/20 active:scale-95"
+                  className="app-button-primary w-full sm:w-auto shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>{t("Log Exercise")}</span>
@@ -183,7 +193,7 @@ function DashboardContent() {
                 todayLog.workouts.map((workout) => (
                   <div
                     key={workout.id}
-                    className="p-4 rounded-2xl bg-slate-800/40 border border-slate-800 hover:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group transition-colors"
+                    className="app-surface-muted p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group transition-colors"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -205,7 +215,7 @@ function DashboardContent() {
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
-                      <span className="text-xs font-bold text-rose-400 flex items-center gap-1">
+                      <span className="text-xs font-bold text-teal-200 flex items-center gap-1">
                         <Flame className="w-3.5 h-3.5" />
                         +{t(workout.caloriesBurned)}{t(" kcal ")}</span>
                       <button
@@ -312,7 +322,7 @@ function DashboardContent() {
       </main>
 
       {/* Persistent Bottom Tab Navigation Bar */}
-      <div className="fixed bottom-0 inset-x-0 z-30 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2">
+      <div className="fixed bottom-0 inset-x-0 z-30 bg-[#07120f]/95 backdrop-blur-xl border-t border-teal-900/60 px-2 sm:px-4 py-2">
         <div className="max-w-md mx-auto flex items-center justify-around">
           <button
             id="tab-btn-dashboard"
@@ -354,7 +364,7 @@ function DashboardContent() {
             }}
             className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
               activeTab === 'workouts'
-                ? 'text-rose-400 font-bold scale-105'
+                ? 'text-teal-300 font-bold scale-105'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -442,6 +452,7 @@ function DashboardContent() {
       <ProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
+        initialSection={profileSection}
       />
 
       <ScientificReferencesModal

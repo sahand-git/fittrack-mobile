@@ -7,7 +7,8 @@ import {
   WorkoutEntry,
   MealType,
   WeightEntry,
-  AICoachReport
+  AICoachReport,
+  NutrientIntakeEntry
 } from '../types';
 import type { ReminderSettings } from '../types';
 import { calculateTargets, calculateStepCalories } from '../utils/calculator';
@@ -63,6 +64,7 @@ export const createEmptyDayLog = (date: string): DayLog => ({
     snack: []
   },
   waterMl: 0,
+  nutrientIntakes: [],
   steps: 0,
   stepCaloriesBurned: 0,
   workouts: []
@@ -95,6 +97,9 @@ interface FitnessContextType {
   saveDayAIReport: (report: AICoachReport) => void;
   updateReminderSettings: (settings: ReminderSettings) => void;
   markSupplementTaken: (supplementId: string, taken: boolean) => void;
+  addNutrientIntake: (input: Omit<NutrientIntakeEntry, 'id'>) => void;
+  updateNutrientIntake: (id: string, input: Omit<NutrientIntakeEntry, 'id'>) => void;
+  removeNutrientIntake: (id: string) => void;
   connectGoogleAccount: (email: string, name?: string) => Promise<boolean>;
   disconnectGoogleAccount: () => void;
   resetAccountAndData: () => void;
@@ -524,6 +529,51 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
     });
   };
 
+  const addNutrientIntake = (input: Omit<NutrientIntakeEntry, 'id'>) => {
+    const entry: NutrientIntakeEntry = {
+      ...input,
+      id: `nutrient_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+    };
+    setDailyLogs(prev => {
+      const day = prev[currentDate] || createEmptyDayLog(currentDate);
+      return {
+        ...prev,
+        [currentDate]: {
+          ...day,
+          nutrientIntakes: [entry, ...(day.nutrientIntakes || [])]
+        }
+      };
+    });
+  };
+
+  const updateNutrientIntake = (id: string, input: Omit<NutrientIntakeEntry, 'id'>) => {
+    setDailyLogs(prev => {
+      const day = prev[currentDate] || createEmptyDayLog(currentDate);
+      return {
+        ...prev,
+        [currentDate]: {
+          ...day,
+          nutrientIntakes: (day.nutrientIntakes || []).map(entry =>
+            entry.id === id ? { ...input, id } : entry
+          )
+        }
+      };
+    });
+  };
+
+  const removeNutrientIntake = (id: string) => {
+    setDailyLogs(prev => {
+      const day = prev[currentDate] || createEmptyDayLog(currentDate);
+      return {
+        ...prev,
+        [currentDate]: {
+          ...day,
+          nutrientIntakes: (day.nutrientIntakes || []).filter(entry => entry.id !== id)
+        }
+      };
+    });
+  };
+
   const getBackupJSON = () => {
     const data = {
       version: '2.0',
@@ -598,6 +648,9 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
         saveDayAIReport,
         updateReminderSettings,
         markSupplementTaken,
+        addNutrientIntake,
+        updateNutrientIntake,
+        removeNutrientIntake,
         connectGoogleAccount,
         disconnectGoogleAccount,
         resetAccountAndData,

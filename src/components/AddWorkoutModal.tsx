@@ -20,6 +20,7 @@ import confetti from 'canvas-confetti';
 import { useFitness } from '../context/FitnessContext';
 import { ExerciseCategory, ExerciseSet } from '../types';
 import { EXERCISE_DATABASE, estimateWorkoutCalories, ExercisePreset } from '../data/exerciseDatabase';
+import { parseWorkoutDuration } from '../utils/workoutInput';
 
 interface AddWorkoutModalProps {
   isOpen: boolean;
@@ -40,7 +41,8 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory>('strength');
   const [selectedPreset, setSelectedPreset] = useState<ExercisePreset>(EXERCISE_DATABASE[0]);
   const [customWorkoutName, setCustomWorkoutName] = useState<string>('');
-  const [durationMinutes, setDurationMinutes] = useState<number>(45);
+  const [durationDraft, setDurationDraft] = useState<string>('45');
+  const [durationError, setDurationError] = useState<string>('');
   const [customCaloriesBurned, setCustomCaloriesBurned] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -57,15 +59,17 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
     return matchesCat && matchesSearch;
   });
 
-  const calculatedBurn = estimateWorkoutCalories(
+  const parsedDuration = parseWorkoutDuration(durationDraft);
+  const calculatedBurn = parsedDuration ? estimateWorkoutCalories(
     selectedPreset.metValue,
-    durationMinutes,
+    parsedDuration,
     profile.weightKg
-  );
+  ) : 0;
 
   const handleSelectPreset = (preset: ExercisePreset) => {
     setSelectedPreset(preset);
-    setDurationMinutes(preset.defaultMinutes);
+    setDurationDraft(String(preset.defaultMinutes));
+    setDurationError('');
     setCustomCaloriesBurned('');
   };
 
@@ -95,6 +99,11 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
 
   const handleSaveWorkout = (e: React.FormEvent) => {
     e.preventDefault();
+    const durationMinutes = parseWorkoutDuration(durationDraft);
+    if (durationMinutes === null) {
+      setDurationError(t('Enter 1–360 whole minutes.'));
+      return;
+    }
 
     const finalBurn = customCaloriesBurned
       ? parseInt(customCaloriesBurned) || calculatedBurn
@@ -103,7 +112,7 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
     addWorkout({
       name: customWorkoutName.trim() || selectedPreset.name,
       category: selectedCategory,
-      durationMinutes: Math.max(1, durationMinutes),
+      durationMinutes,
       caloriesBurned: finalBurn,
       sets: selectedCategory === 'strength' ? sets : undefined
     });
@@ -120,7 +129,7 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
   return (
     <div
       id="add-workout-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 app-modal-backdrop"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -129,13 +138,13 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[88dvh] flex flex-col"
+        className="app-modal w-full max-w-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-2 p-4 sm:p-5 border-b border-slate-800 bg-slate-900 shrink-0">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+            <div className="app-icon-tile">
               <Dumbbell className="w-5 h-5" />
             </div>
             <div>
@@ -158,7 +167,7 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSaveWorkout} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
           {/* Category Chips */}
-          <div className="flex flex-wrap gap-2 pb-1">
+          <div className="app-scroll-row flex gap-2 pb-1">
             {t((['strength', 'cardio', 'hiit', 'sports', 'flexibility'] as ExerciseCategory[]).map((cat) => (
               <button
                 key={cat}
@@ -170,7 +179,7 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
                 }}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all whitespace-nowrap ${
                   selectedCategory === cat
-                    ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
+                    ? 'bg-teal-500/25 text-teal-100 border border-teal-400/30'
                     : 'bg-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -221,9 +230,9 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
           </div>
 
           {/* Duration & Calorie Estimation with Formula Reference */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">{t("Duration (Minutes)")}</label>
+              <label className="app-field-label" htmlFor="input-workout-duration">{t("Duration (Minutes)")}</label>
               <div className="relative">
                 <Clock className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input
@@ -231,27 +240,29 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
                   type="number"
                   min={1}
                   max={360}
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 30)}
-                  className="w-full ps-9 pe-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-bold focus:border-rose-500 focus:outline-none"
+                  value={durationDraft}
+                  onChange={(e) => { setDurationDraft(e.target.value); setDurationError(''); }}
+                  aria-invalid={!!durationError}
+                  className="app-field ps-9"
                 />
               </div>
+              <div className="app-scroll-row flex gap-2 mt-2" aria-label={t('Quick duration')}>{[15, 30, 45, 60].map(minutes => <button key={minutes} type="button" onClick={() => { setDurationDraft(String(minutes)); setDurationError(''); }} className={`app-chip app-chip-small ${durationDraft === String(minutes) ? 'app-chip-active' : ''}`}>{minutes} {t('min')}</button>)}</div>
+              {durationError && <p role="alert" className="text-xs text-rose-300 mt-2">{durationError}</p>}
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1 flex items-center justify-between">
-                <span>{t("Calories Burned")}</span>
-                <span className="text-[10px] text-rose-400 font-mono">{t("Calculated")}</span>
-              </label>
+              <label className="app-field-label" htmlFor="input-workout-calories">{t("Calories Burned")}</label>
               <div className="relative">
                 <Flame className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-500" />
                 <input
+                  id="input-workout-calories"
                   type="number"
-                  value={customCaloriesBurned || calculatedBurn}
+                  value={customCaloriesBurned || (parsedDuration ? calculatedBurn : '')}
                   onChange={(e) => setCustomCaloriesBurned(e.target.value)}
-                  className="w-full ps-9 pe-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-bold focus:border-rose-500 focus:outline-none"
+                  className="app-field ps-9"
                 />
               </div>
+              <span className="app-status-badge mt-2">{t('Calculated')}</span>
             </div>
           </div>
 
@@ -262,7 +273,7 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
                 <BookOpen className="w-3 h-3" />{t(" 2024 Ainsworth Compendium of Physical Activities ")}</span>
               <span className="font-mono text-white">{t("MET ")}{t(selectedPreset.metValue)}</span>
             </div>
-            <p className="text-[10px] text-slate-400">{t(" Formula: (")}{t(selectedPreset.metValue)}{t(" MET × 3.5 × ")}{t(profile.weightKg)}{t("kg ÷ 200) × ")}{t(durationMinutes)}{t(" min = ")}<strong>{t(calculatedBurn)}{t(" kcal")}</strong>.
+            <p className="text-[10px] text-slate-400">{t(" Formula: (")}{t(selectedPreset.metValue)}{t(" MET × 3.5 × ")}{t(profile.weightKg)}{t("kg ÷ 200) × ")}{t(parsedDuration ?? '—')}{t(" min = ")}<strong>{parsedDuration ? t(calculatedBurn) : '—'}{t(" kcal")}</strong>.
             </p>
           </div>
 
@@ -323,10 +334,10 @@ export const AddWorkoutModal: React.FC<AddWorkoutModalProps> = ({
           <button
             id="btn-confirm-save-workout"
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-rose-500/25 active:scale-95"
+            className="app-button-primary w-full"
           >
             <Plus className="w-4 h-4" />
-            <span>{t("Save Workout & Burn ")}{t(customCaloriesBurned || calculatedBurn)}{t(" kcal")}</span>
+            <span>{t("Save Workout & Burn ")}{t(customCaloriesBurned || (parsedDuration ? calculatedBurn : '—'))}{t(" kcal")}</span>
           </button>
         </form>
       </motion.div>

@@ -15,12 +15,26 @@ export interface Micronutrients {
   vitaminB12mcg?: number;
 }
 
+export type NutrientSourceType = 'manual' | 'supplement';
+
+export interface NutrientIntakeEntry {
+  id: string;
+  nutrient: keyof Micronutrients;
+  amount: number;
+  unit: 'mg' | 'mcg';
+  sourceType: NutrientSourceType;
+  sourceName?: string;
+  note?: string;
+  loggedAt: string;
+}
+
 export interface SupplementReminder {
   id: string;
   name: string;
   amount: string;
   time: string;
   enabled: boolean;
+  nutrients?: Micronutrients;
 }
 
 export interface ReminderSettings {
@@ -149,6 +163,7 @@ export interface DayLog {
   waterMl: number;
   waterLoggedAt?: string[];
   supplementsTaken?: string[];
+  nutrientIntakes?: NutrientIntakeEntry[];
   steps: number;
   stepCaloriesBurned: number;
   workouts: WorkoutEntry[];

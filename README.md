@@ -6,11 +6,17 @@ Meal, workout, weight and step tracking with first-launch profile setup. Android
 
 Get FitTrack.apk from [Releases](https://github.com/sahand-git/fittrack-mobile/releases). Android 9+ is required. Keep an older installation if it contains data you need: older exports are broken and changing debug signing keys can prevent an in-place update. Do not uninstall without a confirmed backup. Stable release signing still needs configuration.
 
-## Version 1.5 friends beta
+## Version 1.7 friends beta
+
+The Nutrition card now has separate Vitamins and Minerals tabs, professional daily manual entry, fixed nutrient units, edit/delete controls, and a dedicated Supplements area. Food, added, and combined amounts remain distinct. Reminder controls live in Settings → Notifications & Schedule and first-time users are still invited to choose their own meal, water, and supplement times.
+
+The workout logger now lets users clear the duration and type a replacement value. It validates whole minutes from 1–360 on save and offers 15, 30, 45, and 60 minute shortcuts. Workout labels align across phone widths and controls keep complete words together.
+
+The Midnight Sage visual refresh uses calm navy and sage surfaces, consistent touch targets, softer borders, and phone-safe modal heights. English, Arabic, and Kurdish Sorani layouts are supported, and visible legacy Sorani labels with stray characters were corrected.
 
 English, Arabic, and Kurdish Sorani are available from the language selector. Arabic and Sorani use right-to-left layouts, translated food and workout search, and AI replies in the selected language.
 
-Verified accounts can manually save a private backup to Firebase Cloud Firestore and restore it on another device. Each account can access only its own backup. Passwords and Gemini API keys are never included. Users can permanently delete their login, cloud backup, and account-specific local records inside Backup & Account.
+Fitness records remain on the device and can be transferred with JSON export/import. Firebase cloud backup access remains disabled for this testing stage. Passwords and Gemini API keys are never included in JSON exports.
 
 Closing Meals, Workouts, or AI Coach returns to the Dashboard. Food categories wrap into readable rows and related categories are grouped. The food picker includes offline Twemoji illustrations and uses available package photos, with credits linked from the list.
 
@@ -28,7 +34,7 @@ Backup & Gemini contains JSON export/import. Native export writes a UTF-8 file t
 
 Smart Text, Calculate Macros and AI Coach use direct Gemini API requests. Each user may supply their own [Google AI Studio API key](https://aistudio.google.com/apikey), accept the data-sharing notice, and enable it for the session. The key is held only in memory, never bundled, persisted, or exported. The user's API quota and billing apply. Disconnect clears it. This is optional API-key setup, not Google OAuth; typing a Gmail address or owning a Gemini chat subscription does not authorize API access. Google login identifies the user; it does not authorize Gemini API usage. Cloud backup is manual and is separate from Gemini.
 
-AI estimates need portion review. Twenty-six unit tests passed. Live Firebase sign-up, wrong-password rejection and correct-password sign-in passed using a temporary account that was then removed. Browser checks cover account isolation and verification gating with mocked responses. Native Google account selection, email delivery, and physical-device health/sharing checks still need confirmation.
+AI estimates need portion review. Fifty unit tests pass. Browser checks cover nutrient entry, reminder relocation, workout duration replacement, account isolation, and verification gating. Native Google account selection, email delivery, notifications, and physical-device health/sharing still need confirmation on real phones.
 
 ## iPhone
 
