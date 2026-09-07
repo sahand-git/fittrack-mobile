@@ -18,6 +18,7 @@ import { GoogleSyncModal } from './components/GoogleSyncModal';
 import { ProfileModal } from './components/ProfileModal';
 import { ScientificReferencesModal } from './components/ScientificReferencesModal';
 import { PWAInstallBanner } from './components/PWAInstallBanner';
+import { WellnessPanel } from './components/WellnessPanel';
 import { MealType } from './types';
 import {
   Dumbbell,
@@ -132,6 +133,8 @@ function DashboardContent() {
             onOpenBarcodeScanner={handleOpenBarcodeScanner}
           />
         ))}
+
+        {activeTab === 'dashboard' && <WellnessPanel />}
 
         {/* Workouts & Active Exercise Section */}
         {t((activeTab === 'dashboard' || activeTab === 'workouts') && (

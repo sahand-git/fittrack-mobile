@@ -1085,5 +1085,19 @@
   "Your Gemini API quota or rate limit was reached. Check Google AI Studio usage and billing before retrying.": "Your Gemini API quota or rate limit was reached. Check Google AI Studio usage and billing before retrying.",
   "Your name": "اسمك",
   "Your session expired. Sign in again to use cloud backup.": "انتهت جلستك. قم بتسجيل الدخول مرة أخرى لاستخدام النسخ الاحتياطي السحابي.",
-  " Health & Fit": " الصحة واللياقة"
+  " Health & Fit": " الصحة واللياقة",
+  "Vitamins, Minerals & Reminders": "الفيتامينات والمعادن والتذكيرات",
+  "Known nutrients from today’s foods. Missing label values are not counted.": "العناصر الغذائية المعروفة من أطعمة اليوم. لا تُحتسب القيم غير المتوفرة على الملصق.",
+  "Reminder settings": "إعدادات التذكير",
+  "Calcium": "الكالسيوم", "Iron": "الحديد", "Magnesium": "المغنيسيوم", "Potassium": "البوتاسيوم", "Zinc": "الزنك",
+  "Vitamin C": "فيتامين ج", "Vitamin D": "فيتامين د", "Vitamin B12": "فيتامين ب12", "Not available": "غير متوفر", "from": "من", "foods": "أطعمة",
+  "Supplement": "مكمّل", "Taken": "تم تناوله", "Mark taken": "تحديد كمأخوذ", "Reminder setup": "إعداد التذكيرات",
+  "Choose your reminders": "اختر تذكيراتك", "You control every time. You can change these settings later.": "أنت تختار كل وقت ويمكنك تغيير هذه الإعدادات لاحقاً.",
+  "Enable phone reminders": "تفعيل تذكيرات الهاتف", "Meal times": "أوقات الوجبات", "Water reminders": "تذكيرات الماء", "Remind me to drink water": "ذكّرني بشرب الماء",
+  "Start time": "وقت البدء", "End time": "وقت الانتهاء", "Interval": "الفاصل", "Supplements": "المكمّلات", "Add supplement": "إضافة مكمّل",
+  "Supplement name": "اسم المكمّل", "Amount": "الكمية", "Time": "الوقت", "Delete supplement": "حذف المكمّل",
+  "Enter only the supplement and amount you already use. FitTrack does not recommend doses.": "أدخل فقط المكمّل والكمية التي تستخدمها بالفعل. لا يوصي FitTrack بجرعات.",
+  "Skip reminders": "تخطي التذكيرات", "Save reminder choices": "حفظ خيارات التذكير", "Notifications are blocked in phone settings. Your times were saved.": "التنبيهات محظورة في إعدادات الهاتف. تم حفظ الأوقات.",
+  "Meal reminder": "تذكير بالوجبة", "Water reminder": "تذكير بالماء", "Supplement reminder": "تذكير بالمكمّل", "Remember to log your meal.": "تذكّر تسجيل وجبتك.", "Take a moment to drink and log some water.": "اشرب بعض الماء وسجّله الآن.",
+  "Vitamins & minerals from the label (optional)": "الفيتامينات والمعادن من الملصق (اختياري)"
 }

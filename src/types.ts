@@ -4,6 +4,32 @@ export type FitnessGoal = 'fat_loss_aggressive' | 'fat_loss_moderate' | 'mainten
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export type ExerciseCategory = 'strength' | 'cardio' | 'hiit' | 'sports' | 'flexibility';
 
+export interface Micronutrients {
+  calciumMg?: number;
+  ironMg?: number;
+  magnesiumMg?: number;
+  potassiumMg?: number;
+  zincMg?: number;
+  vitaminCmg?: number;
+  vitaminDmcg?: number;
+  vitaminB12mcg?: number;
+}
+
+export interface SupplementReminder {
+  id: string;
+  name: string;
+  amount: string;
+  time: string;
+  enabled: boolean;
+}
+
+export interface ReminderSettings {
+  enabled: boolean;
+  mealTimes: Partial<Record<'breakfast' | 'lunch' | 'dinner', string>>;
+  water: { enabled: boolean; start: string; end: string; intervalMinutes: number };
+  supplements: SupplementReminder[];
+}
+
 export interface UserProfile {
   name: string;
   email: string;
@@ -27,6 +53,8 @@ export interface UserProfile {
   targetFat: number;
   profileCompleted: boolean;
   onboardingVersion?: number;
+  reminderSetupCompleted?: boolean;
+  reminders?: ReminderSettings;
   customMacroSplit?: {
     proteinPercent: number;
     carbsPercent: number;
@@ -34,7 +62,7 @@ export interface UserProfile {
   };
 }
 
-export interface FoodNutrients {
+export interface FoodNutrients extends Micronutrients {
   calories: number;
   protein: number;
   carbs: number;
@@ -119,6 +147,8 @@ export interface DayLog {
     snack: LoggedMealItem[];
   };
   waterMl: number;
+  waterLoggedAt?: string[];
+  supplementsTaken?: string[];
   steps: number;
   stepCaloriesBurned: number;
   workouts: WorkoutEntry[];

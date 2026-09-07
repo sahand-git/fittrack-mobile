@@ -79,6 +79,11 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
   const [customProtein, setCustomProtein] = useState<string>('');
   const [customCarbs, setCustomCarbs] = useState<string>('');
   const [customFat, setCustomFat] = useState<string>('');
+  const [customMicros, setCustomMicros] = useState<Record<string, string>>({});
+  const microFields = [
+    ['calciumMg', 'Calcium', 'mg'], ['ironMg', 'Iron', 'mg'], ['magnesiumMg', 'Magnesium', 'mg'], ['potassiumMg', 'Potassium', 'mg'],
+    ['zincMg', 'Zinc', 'mg'], ['vitaminCmg', 'Vitamin C', 'mg'], ['vitaminDmcg', 'Vitamin D', 'mcg'], ['vitaminB12mcg', 'Vitamin B12', 'mcg']
+  ] as const;
 
   const categories = ['All', 'Saved', ...Array.from(new Set(allFoodDatabase.map(foodCategory))).sort()];
 
@@ -158,6 +163,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
     e.preventDefault();
     if (!customName.trim() || !customCalories) return;
 
+    const micronutrients = Object.fromEntries(microFields.flatMap(([key]) => customMicros[key] === '' || customMicros[key] === undefined ? [] : [[key, Math.max(0, Number(customMicros[key]))]]));
     const newFood: FoodItem = {
       id: 'custom_' + Date.now(),
       name: customName.trim(),
@@ -168,6 +174,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
       protein: parseFloat(customProtein) || 0,
       carbs: parseFloat(customCarbs) || 0,
       fat: parseFloat(customFat) || 0,
+      ...micronutrients,
       source: 'custom'
     };
 
@@ -573,7 +580,7 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
                   <label className="block text-[11px] font-medium text-slate-300 mb-1">{t("Calories *")}</label>
                   <input
@@ -617,6 +624,15 @@ export const FoodLogModal: React.FC<FoodLogModalProps> = ({
                     placeholder={t("g")}
                     className="w-full px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500"
                   />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-slate-300 mb-2">{t('Vitamins & minerals from the label (optional)')}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {microFields.map(([key, label, unit]) => <label key={key} className="text-[10px] text-slate-400 min-w-0">{t(label)} ({unit})
+                    <input type="number" min="0" step="0.01" value={customMicros[key] || ''} onChange={event => setCustomMicros(current => ({...current,[key]:event.target.value}))} className="mt-1 w-full min-w-0 px-2 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs" />
+                  </label>)}
                 </div>
               </div>
 

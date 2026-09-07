@@ -12,6 +12,7 @@ import { deleteDoc, doc, getFirestore } from 'firebase/firestore';
 import config from '../config/firebase.json';
 import { clearGeminiKey } from '../utils/gemini';
 import { accountStorageKeys } from '../utils/account';
+import { clearWellnessNotifications } from '../utils/notifications';
 
 const configured = Boolean(config.apiKey && config.projectId && config.authDomain && config.appId);
 const app = configured ? initializeApp(config) : null;
@@ -60,9 +61,10 @@ export function AuthProvider({children}:{children:React.ReactNode}) {
     resendVerification:async()=>{const current=requireAuth().currentUser;if(!current)throw new Error('Sign in first.');await sendEmailVerification(current);},
     checkVerification:async()=>{const current=requireAuth().currentUser;if(!current)return false;await reload(current);await current.getIdToken(true);setUser(current);setRevision(n=>n+1);return current.emailVerified;},
     continueAsGuest:()=>{if(user)return;clearGeminiKey();localStorage.setItem(guestKey,'true');setGuest(true);},
-    deleteAccount:async()=>{const current=requireAuth().currentUser;if(!current||!app)throw new Error('Sign in first.');const uid=current.uid;await deleteDoc(doc(getFirestore(app),'fitnessBackups',uid));await deleteUser(current);const keys=accountStorageKeys(uid);Object.values(keys).forEach(key=>localStorage.removeItem(key));clearGeminiKey();stopGuest();setUser(null);},
+    deleteAccount:async()=>{const current=requireAuth().currentUser;if(!current||!app)throw new Error('Sign in first.');const uid=current.uid;await deleteDoc(doc(getFirestore(app),'fitnessBackups',uid)).catch(error=>{if((error as {code?:string}).code!=='permission-denied')throw error;});await deleteUser(current);const keys=accountStorageKeys(uid);Object.values(keys).forEach(key=>localStorage.removeItem(key));await clearWellnessNotifications();clearGeminiKey();stopGuest();setUser(null);},
     logout:async()=>{
       if(auth)await signOut(auth);
+      await clearWellnessNotifications();
       clearGeminiKey();stopGuest();setUser(null);
       // Native auth is skipped, but discard Google's cached chooser credentials too.
       if(Capacitor.isNativePlatform())await FirebaseAuthentication.signOut().catch(()=>{});

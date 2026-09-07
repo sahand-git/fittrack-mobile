@@ -1,3 +1,4 @@
+/// <reference types="@capacitor/local-notifications" />
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const serverUrl = process.env.CAPACITOR_SERVER_URL;

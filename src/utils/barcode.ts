@@ -36,6 +36,13 @@ export function normalizeProduct(barcode: string, product: Record<string, any>):
   const serving = quantity && (unit === 'g' || unit === 'ml') ? quantity : 100;
   const servingSize = quantity && (unit === 'g' || unit === 'ml') ? (label || `${serving} ${unit}`) : '100 g';
   const scale = (value: number | undefined) => value === undefined ? undefined : round(value * serving / 100);
+  const convert = (key: string, target: 'mg' | 'mcg') => {
+    const value = number(n[`${key}_100g`]);
+    if (value === undefined) return undefined;
+    const unit = text(n[`${key}_unit`]).toLowerCase() || 'g';
+    const grams = unit === 'mcg' || unit === 'µg' ? value / 1_000_000 : unit === 'mg' ? value / 1000 : value;
+    return scale(grams * (target === 'mg' ? 1000 : 1_000_000));
+  };
   const sodiumGrams = number(n.sodium_100g) ?? (number(n.salt_100g) === undefined ? undefined : number(n.salt_100g)! / 2.5);
   const image = text(product.image_url);
   return {
@@ -44,6 +51,10 @@ export function normalizeProduct(barcode: string, product: Record<string, any>):
     calories: scale(calories)!, protein: scale(protein)!, carbs: scale(carbs)!, fat: scale(fat)!,
     fiber: scale(number(n.fiber_100g)), sugars: scale(number(n.sugars_100g)),
     sodium: scale(sodiumGrams === undefined ? undefined : sodiumGrams * 1000),
+    calciumMg: convert('calcium', 'mg'), ironMg: convert('iron', 'mg'),
+    magnesiumMg: convert('magnesium', 'mg'), potassiumMg: convert('potassium', 'mg'),
+    zincMg: convert('zinc', 'mg'), vitaminCmg: convert('vitamin-c', 'mg'),
+    vitaminDmcg: convert('vitamin-d', 'mcg'), vitaminB12mcg: convert('vitamin-b12', 'mcg'),
     nutriScore: /^[a-e]$/i.test(text(product.nutrition_grades)) ? text(product.nutrition_grades).toUpperCase() : undefined,
     imageUrl: image.startsWith('https://') ? image : undefined,
     ingredients: text(product.ingredients_text), source: 'open_food_facts'

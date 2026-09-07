@@ -45,6 +45,15 @@ test('zero nutrients stay zero and every nutrient uses the same serving', () => 
   assert.equal(food.sugars, 3.6);
 });
 
+test('converts Open Food Facts micronutrient units into explicit app units', () => {
+  const food = normalizeProduct(code, { ...product, nutriments: { ...product.nutriments,
+    calcium_100g: 0.12, calcium_unit: 'g', iron_100g: 2.5, iron_unit: 'mg',
+    'vitamin-d_100g': 0.00001, 'vitamin-d_unit': 'g' } });
+  assert.equal(food.calciumMg, 36);
+  assert.equal(food.ironMg, 0.75);
+  assert.equal(food.vitaminDmcg, 3);
+});
+
 test('missing serving weight falls back to a clearly labelled 100 g portion', () => {
   const food = normalizeProduct(code, { ...product, serving_quantity: undefined, serving_size: 'one bowl' });
   assert.equal(food.servingSize, '100 g');

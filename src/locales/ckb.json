@@ -1086,5 +1086,18 @@
   "Your name": "ناوی خۆت",
   "Your session expired. Sign in again to use cloud backup.": "دانیشتنەکەت بەسەرچوو. دووبارە بچۆرەوە ژوورەوە بۆ بەکارهێنانی پاشەکەوتی هەور.",
   " Health & Fit": " تەندروستی و لەشجوانی",
-  "Snack": "خواردنی نێوان ژەمەکان"
+  "Snack": "خواردنی نێوان ژەمەکان",
+  "Vitamins, Minerals & Reminders": "ڤیتامین و کانزا و بیرخستنەوەکان",
+  "Known nutrients from today’s foods. Missing label values are not counted.": "ماددە خۆراکییە ناسراوەکانی خواردنی ئەمڕۆ. نرخە نەبووەکانی سەر پێناسەکە ژمێردراو نین.",
+  "Reminder settings": "ڕێکخستنی بیرخستنەوە", "Calcium": "کەلسیۆم", "Iron": "ئاسن", "Magnesium": "مەگنیسیۆم", "Potassium": "پۆتاسیۆم", "Zinc": "زینک",
+  "Vitamin C": "ڤیتامینی C", "Vitamin D": "ڤیتامینی D", "Vitamin B12": "ڤیتامینی B12", "Not available": "بەردەست نییە", "from": "لە", "foods": "خواردن",
+  "Supplement": "تەواوکەری خۆراک", "Taken": "خواردراوە", "Mark taken": "وەک خواردراو دیاری بکە", "Reminder setup": "ڕێکخستنی بیرخستنەوە",
+  "Choose your reminders": "کاتی بیرخستنەوەکانت هەڵبژێرە", "You control every time. You can change these settings later.": "هەموو کاتەکان خۆت دیاری دەکەیت و دواتر دەتوانیت بیانگۆڕیت.",
+  "Enable phone reminders": "بیرخستنەوەی تەلەفۆن چالاک بکە", "Meal times": "کاتی ژەمەکان", "Water reminders": "بیرخستنەوەی ئاو", "Remind me to drink water": "بیرم بخەرەوە ئاو بخۆمەوە",
+  "Start time": "کاتی دەستپێک", "End time": "کاتی کۆتایی", "Interval": "ماوە", "Supplements": "تەواوکەرەکان", "Add supplement": "تەواوکەر زیاد بکە",
+  "Supplement name": "ناوی تەواوکەر", "Amount": "بڕ", "Time": "کات", "Delete supplement": "تەواوکەر بسڕەوە",
+  "Enter only the supplement and amount you already use. FitTrack does not recommend doses.": "تەنها ناو و بڕی ئەو تەواوکەرە بنووسە کە ئێستا بەکاری دەهێنیت. FitTrack ڕێژە پێشنیار ناکات.",
+  "Skip reminders": "بیرخستنەوەکان تێپەڕێنە", "Save reminder choices": "هەڵبژاردەکانی بیرخستنەوە پاشەکەوت بکە", "Notifications are blocked in phone settings. Your times were saved.": "ئاگادارکردنەوەکان لە ڕێکخستنی تەلەفۆن بلۆک کراون. کاتەکان پاشەکەوت کران.",
+  "Meal reminder": "بیرخستنەوەی ژەم", "Water reminder": "بیرخستنەوەی ئاو", "Supplement reminder": "بیرخستنەوەی تەواوکەر", "Remember to log your meal.": "بیرت بێت ژەمەکەت تۆمار بکەیت.", "Take a moment to drink and log some water.": "کەمێک ئاو بخۆرەوە و تۆماری بکە.",
+  "Vitamins & minerals from the label (optional)": "ڤیتامین و کانزاکانی سەر پێناسەکە (ئارەزوومەندانە)"
 }

@@ -9,6 +9,7 @@ import {
   WeightEntry,
   AICoachReport
 } from '../types';
+import type { ReminderSettings } from '../types';
 import { calculateTargets, calculateStepCalories } from '../utils/calculator';
 import { VERIFIED_FOOD_DATABASE } from '../data/foodDatabase';
 import { getTodayDateString } from '../utils/date';
@@ -17,6 +18,16 @@ import { exportBackupFile } from '../utils/backup';
 import { accountStorageKeys } from '../utils/account';
 import { parseBackup, serializeBackup, nextRevision, type CloudSnapshot } from '../utils/cloudBackupCore';
 import { readCloudBackup, writeCloudBackup } from '../utils/cloudBackup';
+import { clearWellnessNotifications, syncWellnessNotifications } from '../utils/notifications';
+import { scaleMicronutrients } from '../utils/micronutrients';
+import { useLocale } from '../utils/locale';
+
+export const DEFAULT_REMINDERS: ReminderSettings = {
+  enabled: false,
+  mealTimes: { breakfast: '08:00', lunch: '13:00', dinner: '19:00' },
+  water: { enabled: true, start: '09:00', end: '21:00', intervalMinutes: 120 },
+  supplements: []
+};
 
 const DEFAULT_PROFILE: UserProfile = {
   name: '',
@@ -38,7 +49,9 @@ const DEFAULT_PROFILE: UserProfile = {
   targetCarbs: 275,
   targetFat: 73,
   profileCompleted: false,
-  isGoogleConnected: false
+  isGoogleConnected: false,
+  reminderSetupCompleted: false,
+  reminders: DEFAULT_REMINDERS
 };
 
 export const createEmptyDayLog = (date: string): DayLog => ({
@@ -80,6 +93,8 @@ interface FitnessContextType {
   updateSteps: (stepsOrUpdater: number | ((prev: number) => number)) => void;
   addWeightEntry: (weightKg: number, bodyFat?: number, note?: string) => void;
   saveDayAIReport: (report: AICoachReport) => void;
+  updateReminderSettings: (settings: ReminderSettings) => void;
+  markSupplementTaken: (supplementId: string, taken: boolean) => void;
   connectGoogleAccount: (email: string, name?: string) => Promise<boolean>;
   disconnectGoogleAccount: () => void;
   resetAccountAndData: () => void;
@@ -98,6 +113,7 @@ interface FitnessContextType {
 const FitnessContext = createContext<FitnessContextType | undefined>(undefined);
 
 export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: string; accountName?: string; accountEmail?: string }> = ({ children, accountId, accountName, accountEmail }) => {
+  const reminderLocale = useLocale();
   const keys = accountStorageKeys(accountId);
   const STORAGE_KEY_PROFILE = keys.profile;
   const STORAGE_KEY_LOGS = keys.logs;
@@ -173,6 +189,19 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
 
   useEffect(() => { clearGeminiKey(); }, [profile.email]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      syncWellnessNotifications(profile.reminders, dailyLogs, profile.waterGoalMl).catch(error => console.warn('Could not refresh reminders', error));
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [profile.reminders, profile.waterGoalMl, dailyLogs, reminderLocale]);
+
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible') syncWellnessNotifications(profile.reminders, dailyLogs, profile.waterGoalMl).catch(() => undefined); };
+    document.addEventListener('visibilitychange', refresh);
+    return () => document.removeEventListener('visibilitychange', refresh);
+  }, [profile.reminders, profile.waterGoalMl, dailyLogs, reminderLocale]);
+
   // Synchronize localStorage whenever states update
   useEffect(() => {
     try {
@@ -240,6 +269,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
   const disconnectGoogleAccount = () => { clearGeminiKey(); setProfile(prev => ({ ...prev, isGoogleConnected: false })); };
 
   const resetAccountAndData = () => {
+    clearWellnessNotifications().catch(() => undefined);
     try {
       localStorage.removeItem(STORAGE_KEY_PROFILE);
       localStorage.removeItem(STORAGE_KEY_LOGS);
@@ -322,6 +352,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
       fiber: food.fiber ? Math.round(food.fiber * mult * 10) / 10 : undefined,
       sugars: food.sugars ? Math.round(food.sugars * mult * 10) / 10 : undefined,
       sodium: food.sodium ? Math.round(food.sodium * mult) : undefined,
+      ...scaleMicronutrients(food, mult),
       imageUrl: food.imageUrl,
       loggedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -418,7 +449,8 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
         ...prev,
         [currentDate]: {
           ...day,
-          waterMl: newWater
+          waterMl: newWater,
+          waterLoggedAt: deltaMl > 0 ? [...(day.waterLoggedAt || []), new Date().toISOString()] : day.waterLoggedAt
         }
       };
     });
@@ -431,7 +463,8 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
         ...prev,
         [currentDate]: {
           ...day,
-          waterMl: Math.max(0, amountMl)
+          waterMl: Math.max(0, amountMl),
+          waterLoggedAt: amountMl > day.waterMl ? [...(day.waterLoggedAt || []), new Date().toISOString()] : day.waterLoggedAt
         }
       };
     });
@@ -475,6 +508,19 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
           aiReport: report
         }
       };
+    });
+  };
+
+  const updateReminderSettings = (settings: ReminderSettings) => {
+    setProfile(prev => ({ ...prev, reminderSetupCompleted: true, reminders: settings }));
+  };
+
+  const markSupplementTaken = (supplementId: string, taken: boolean) => {
+    setDailyLogs(prev => {
+      const day = prev[currentDate] || createEmptyDayLog(currentDate);
+      const current = new Set(day.supplementsTaken || []);
+      if (taken) current.add(supplementId); else current.delete(supplementId);
+      return { ...prev, [currentDate]: { ...day, supplementsTaken: [...current] } };
     });
   };
 
@@ -550,6 +596,8 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
         updateSteps,
         addWeightEntry,
         saveDayAIReport,
+        updateReminderSettings,
+        markSupplementTaken,
         connectGoogleAccount,
         disconnectGoogleAccount,
         resetAccountAndData,

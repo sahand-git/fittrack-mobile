@@ -11,6 +11,17 @@ test('backup round trip retains fitness records',()=>{
  assert.equal(result.weightHistory[0].weightKg,75);
  assert.equal(result.profile.onboardingVersion,1);
 });
+test('backup retains reminder choices, completion, and micronutrients',()=>{
+ const value:any=sample();
+ value.profile.reminderSetupCompleted=true;
+ value.profile.reminders={enabled:true,mealTimes:{breakfast:'08:00'},water:{enabled:true,start:'09:00',end:'21:00',intervalMinutes:120},supplements:[{id:'d',name:'Vitamin D',amount:'1 tablet',time:'10:00',enabled:true}]};
+ value.dailyLogs['2026-09-03'].waterLoggedAt=['2026-09-03T09:05:00.000Z'];value.dailyLogs['2026-09-03'].supplementsTaken=['d'];
+ value.customFoods=[{id:'f',name:'Food',servingSize:'100 g',servingGrams:100,calories:1,protein:1,carbs:1,fat:1,calciumMg:22,vitaminDmcg:3,source:'custom'}];
+ const result:any=parseBackup(serializeBackup(value));
+ assert.equal(result.profile.reminders.supplements[0].name,'Vitamin D');
+ assert.deepEqual(result.dailyLogs['2026-09-03'].supplementsTaken,['d']);
+ assert.equal(result.customFoods[0].calciumMg,22);
+});
 test('secret and unknown fields cannot enter cloud or file backup',()=>{
  const value:any=sample();value.apiKey='secret-top';value.profile.password='secret-password';value.dailyLogs['2026-09-03'].geminiKey='secret-nested';
  const result=serializeBackup(value);
