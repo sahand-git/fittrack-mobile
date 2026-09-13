@@ -1,4 +1,3 @@
-/// <reference types="@capacitor/local-notifications" />
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const serverUrl = process.env.CAPACITOR_SERVER_URL;
@@ -7,9 +6,9 @@ if (serverUrl && new URL(serverUrl).protocol !== 'https:') {
 }
 
 const config: CapacitorConfig = {
-  appId: 'com.sahand.fitness',
-  appName: 'FitTrack',
-  webDir: 'dist',
+  appId: 'com.sahand.fittrackv2',
+  appName: 'Calorie Pewar',
+  webDir: 'dist/client',
   plugins: { FirebaseAuthentication: { skipNativeAuth: true, providers: ['google.com'] } },
   experimental: { ios: { spm: {
     swiftToolsVersion: '6.1',
@@ -17,7 +16,7 @@ const config: CapacitorConfig = {
     packageTraits: { '@capacitor-firebase/authentication': ['Google'] },
   } } },
   // Set this to your deployed app URL when building a connected mobile version.
-  // The bundled app uses Firebase for accounts and direct APIs for AI and barcodes.
+  // The bundled app uses Firebase accounts and VITE_API_ORIGIN for authenticated AI.
   ...(serverUrl ? { server: { url: serverUrl, cleartext: false } } : {}),
 };
 

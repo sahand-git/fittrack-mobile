@@ -1,8 +1,10 @@
 import { FoodItem } from '../types';
 import { DAILY_FOODS } from './dailyFoods';
+import { KURDISH_FOODS } from './kurdishFoods';
 
 export const VERIFIED_FOOD_DATABASE: FoodItem[] = [
   ...DAILY_FOODS,
+  ...KURDISH_FOODS,
   // Proteins
   {
     id: 'food_chicken_breast',

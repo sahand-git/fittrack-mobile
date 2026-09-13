@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">FitTrack</string>
-    <string name="title_activity_main">FitTrack</string>
-    <string name="package_name">com.sahand.fitness</string>
-    <string name="custom_url_scheme">com.sahand.fitness</string>
+    <string name="app_name">Calorie Pewar</string>
+    <string name="title_activity_main">Calorie Pewar</string>
+    <string name="package_name">com.sahand.fittrackv2</string>
+    <string name="custom_url_scheme">com.sahand.fittrackv2</string>
+    <string name="default_web_client_id">488088161993-q8gj1uhrq261elm2tu1v0serk02ahpba.apps.googleusercontent.com</string>
 </resources>

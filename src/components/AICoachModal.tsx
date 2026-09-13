@@ -22,18 +22,19 @@ import {
 import { useFitness } from '../context/FitnessContext';
 import { GeminiSetup } from './GeminiSetup';
 import { generateGemini, parseCoachResult } from '../utils/gemini';
-import { AICoachReport } from '../types';
+import { AICoachReport, PremiumFeature } from '../types';
 
 interface AICoachModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenUpgradeModal?: (feature: PremiumFeature) => void;
   activeTab?: string;
   setActiveTab?: (tab: string) => void;
 }
 
-export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) => {
+export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose, onOpenUpgradeModal }) => {
   useLocale();
-  const { profile, todayLog, currentDate, saveDayAIReport } = useFitness();
+  const { profile, todayLog, currentDate, saveDayAIReport, isPremium } = useFitness();
 
   const [activeTab, setActiveTab] = useState<'audit' | 'chat'>('audit');
   const [isLoadingAudit, setIsLoadingAudit] = useState<boolean>(false);
@@ -65,6 +66,10 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
   const report = todayLog.aiReport;
 
   const handleRunAudit = async () => {
+    if (!isPremium && onOpenUpgradeModal) {
+      onOpenUpgradeModal('gemini_coach');
+      return;
+    }
     setIsLoadingAudit(true);
     setAuditError(null);
 
@@ -105,6 +110,10 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPremium && onOpenUpgradeModal) {
+      onOpenUpgradeModal('gemini_coach');
+      return;
+    }
     if (!chatInput.trim() || isChatSending) return;
 
     const userText = chatInput.trim();
@@ -129,7 +138,7 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
   return (
     <div
       id="ai-coach-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-md overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -138,76 +147,89 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[88dvh]"
+        className="w-full max-w-2xl bg-white border border-slate-200/90 rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90dvh]"
         onClick={(e) => e.stopPropagation()}
       >
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-indigo-950/60 sticky top-0 z-30 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-400 p-0.5 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
-                <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-emerald-400">
-                  <Bot className="w-5 h-5" />
-                </div>
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <span>{t("Gemini AI Nutrition & Mistake Auditor")}</span>
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30">{t(" Live Coach ")}</span>
-                </h2>
-                <p className="text-xs text-slate-400">{t("Daily nutritional blind spot analysis & guidance")}</p>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-gradient-to-r from-teal-50/80 via-white to-emerald-50/80 sticky top-0 z-30 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 p-0.5 shadow-sm shrink-0">
+              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-teal-600">
+                <Bot className="w-5 h-5" />
               </div>
             </div>
-            <button
-              onClick={onClose}
-              aria-label={t("Close AI Coach")}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div>
+              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <span>{t("Gemini AI Nutrition & Mistake Auditor")}</span>
+                {!isPremium ? (
+                  <span className="text-[10px] font-black px-2 py-0.5 bg-amber-400 text-slate-950 rounded-full font-mono shrink-0 whitespace-nowrap">
+                    PRO
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 bg-teal-50 text-teal-700 rounded-full border border-teal-200 shrink-0 whitespace-nowrap">
+                    {t("Live Coach")}
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">{t("Daily nutritional blind spot analysis & guidance")}</p>
+            </div>
           </div>
-
-        {/* Tab switcher */}
-        <div className="flex px-5 pt-3 border-b border-slate-800/80 bg-slate-900/60 shrink-0">
           <button
-            id="tab-ai-audit"
-            type="button"
-            onClick={() => setActiveTab('audit')}
-            className={`pb-3 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all ${
-              activeTab === 'audit'
-                ? 'border-emerald-500 text-emerald-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+            onClick={onClose}
+            aria-label={t("Close AI Coach")}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <Award className="w-4 h-4" />
-            <span>{t("Daily Mistake & Macro Audit")}</span>
-          </button>
-          <button
-            id="tab-ai-chat"
-            type="button"
-            onClick={() => setActiveTab('chat')}
-            className={`pb-3 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all ${
-              activeTab === 'chat'
-                ? 'border-emerald-500 text-emerald-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <MessageSquareText className="w-4 h-4" />
-            <span>{t("Chat with Nutritionist")}</span>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Tab switcher */}
+        <div className="flex px-5 pt-3 border-b border-slate-100 bg-white shrink-0">
+          <div className="flex bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 w-full gap-1">
+            <button
+              id="tab-ai-audit"
+              type="button"
+              onClick={() => setActiveTab('audit')}
+              className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'audit'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Award className="w-4 h-4 text-teal-600" />
+              <span>{t("Daily Mistake & Macro Audit")}</span>
+            </button>
+            <button
+              id="tab-ai-chat"
+              type="button"
+              onClick={() => setActiveTab('chat')}
+              className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'chat'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <MessageSquareText className="w-4 h-4 text-emerald-600" />
+              <span>{t("Chat with Nutritionist")}</span>
+            </button>
+          </div>
+        </div>
+
         {/* Modal Body */}
-        <div className="p-5 md:p-6 overflow-y-auto flex-1 space-y-5">
+        <div className="p-5 md:p-6 overflow-y-auto flex-1 space-y-5 bg-white">
           <GeminiSetup />
-          {t(activeTab === 'audit' ? (
+          {activeTab === 'audit' ? (
             <div className="space-y-5">
               {/* Audit Trigger Card */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-800/80 to-slate-800/40 border border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                 <div className="space-y-1 text-center sm:text-start">
-                  <span className="text-xs font-bold text-white flex items-center justify-center sm:justify-start gap-1.5">
-                    <Sparkles className="w-4 h-4 text-amber-400" />{t(" Evaluate Today's Intake (")}{t(currentDate)})
+                  <span className="text-xs font-bold text-slate-900 flex items-center justify-center sm:justify-start gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>{t("Evaluate Today's Intake")} ({currentDate})</span>
                   </span>
-                  <p className="text-[11px] text-slate-400">{t(" Logged: ")}{t(totalCalories)} / {t(profile.targetCalories)}{t(" kcal • ")}{t(totalProtein)}{t("g protein • ")}{t(todayLog.steps)}{t(" steps ")}</p>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {t("Logged:")} {totalCalories} / {profile.targetCalories} kcal • {totalProtein}g {t("protein")} • {todayLog.steps} {t("steps")}
+                  </p>
                 </div>
 
                 <button
@@ -215,9 +237,9 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
                   type="button"
                   disabled={isLoadingAudit}
                   onClick={handleRunAudit}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 text-xs font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 active:scale-95"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
                 >
-                  {t(isLoadingAudit ? (
+                  {isLoadingAudit ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>{t("Auditing Nutrition...")}</span>
@@ -225,161 +247,169 @@ export const AICoachModal: React.FC<AICoachModalProps> = ({ isOpen, onClose }) =
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>{t(report ? 'Re-Analyze Today' : 'Run Daily Audit Report')}</span>
+                      <span>{report ? t("Re-Analyze Today") : t("Run Daily Audit Report")}</span>
                     </>
-                  ))}
+                  )}
                 </button>
               </div>
 
-              {t(auditError && (
-                <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span>{t(auditError)}</span>
+              {auditError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                  <span className="font-medium">{auditError}</span>
                 </div>
-              ))}
+              )}
 
               {/* Display Report Result */}
-              {t(report ? (
+              {report ? (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-4"
                 >
                   {/* Grade Banner */}
-                  <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/70 via-slate-900 to-slate-900 border border-emerald-500/30 flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex flex-col items-center justify-center text-emerald-300 shrink-0 shadow-lg shadow-emerald-500/20">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">{t("Grade")}</span>
-                      <span className="text-2xl font-black text-white">{t(report.overallGrade)}</span>
+                  <div className="p-5 rounded-2xl bg-gradient-to-r from-teal-800 via-teal-900 to-slate-900 border border-teal-700/40 text-white flex items-center gap-4 shadow-md">
+                    <div className="w-16 h-16 rounded-2xl bg-white/10 border-2 border-teal-300 flex flex-col items-center justify-center text-teal-200 shrink-0">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-teal-200/80">{t("Grade")}</span>
+                      <span className="text-2xl font-black text-white">{report.overallGrade}</span>
                     </div>
 
                     <div className="space-y-1 min-w-0">
-                      <h3 className="text-sm font-bold text-white leading-snug">{t(report.headline)}</h3>
-                      <p className="text-xs text-slate-300">{t(report.caloricBalance)}</p>
-                      <span className="text-[10px] text-slate-500 block">{t("Generated at ")}{t(report.generatedAt)}</span>
+                      <h3 className="text-sm font-bold text-white leading-snug">{report.headline}</h3>
+                      <p className="text-xs text-teal-100/80 font-medium">{report.caloricBalance}</p>
+                      <span className="text-[10px] text-teal-200/60 block">{t("Generated at ")}{report.generatedAt}</span>
                     </div>
                   </div>
 
                   {/* CRITICAL SECTION: Mistakes & Blind Spots */}
-                  <div className="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/30 space-y-2.5">
-                    <div className="flex items-center gap-2 text-rose-400">
-                      <ShieldAlert className="w-4 h-4" />
+                  <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200/80 space-y-2.5 shadow-xs">
+                    <div className="flex items-center gap-2 text-rose-800">
+                      <ShieldAlert className="w-4 h-4 text-rose-600" />
                       <span className="text-xs font-bold uppercase tracking-wider">{t("Identified Nutritional Mistakes & Pitfalls")}</span>
                     </div>
                     <ul className="space-y-2">
-                      {t(report.mistakesAndBlindSpots?.map((mistake, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-xs text-rose-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1.5 shrink-0" />
-                          <span className="leading-relaxed">{t(mistake)}</span>
+                      {report.mistakesAndBlindSpots?.map((mistake, idx) => (
+                        <li key={idx} className="flex items-start gap-2.5 text-xs text-rose-950 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
+                          <span className="leading-relaxed">{mistake}</span>
                         </li>
-                      )))}
+                      ))}
                     </ul>
                   </div>
 
                   {/* Macro Notes & Tomorrow Fixes */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Macro Breakdown */}
-                    <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-800 space-y-2">
-                      <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-                        <TrendingUp className="w-4 h-4" />{t(" Macro Execution ")}</span>
-                      <p className="text-xs text-slate-300 leading-relaxed">{t(report.macroBreakdown)}</p>
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 shadow-xs">
+                      <span className="text-xs font-bold text-teal-800 flex items-center gap-1.5">
+                        <TrendingUp className="w-4 h-4 text-teal-600" />
+                        <span>{t("Macro Execution")}</span>
+                      </span>
+                      <p className="text-xs text-slate-700 leading-relaxed font-medium">{report.macroBreakdown}</p>
                     </div>
 
                     {/* Actionable Tomorrow Fixes */}
-                    <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 space-y-2">
-                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4" />{t(" Action Plan for Tomorrow ")}</span>
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-2 shadow-xs">
+                      <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>{t("Action Plan for Tomorrow")}</span>
+                      </span>
                       <ul className="space-y-1.5">
-                        {t(report.actionableTomorrowFixes?.map((fix, idx) => (
-                          <li key={idx} className="text-xs text-emerald-200/90 flex items-start gap-2">
-                            <span className="font-bold text-emerald-400 shrink-0">#{t(idx + 1)}</span>
-                            <span>{t(fix)}</span>
+                        {report.actionableTomorrowFixes?.map((fix, idx) => (
+                          <li key={idx} className="text-xs text-emerald-950 font-medium flex items-start gap-2">
+                            <span className="font-bold text-emerald-600 shrink-0">#{idx + 1}</span>
+                            <span>{fix}</span>
                           </li>
-                        )))}
+                        ))}
                       </ul>
                     </div>
                   </div>
 
                   {/* Custom Tailored Meal Suggestion */}
-                  {t(report.customMealSuggestion && (
-                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
-                      <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
+                  {report.customMealSuggestion && (
+                    <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-start gap-3 shadow-xs">
+                      <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shrink-0">
                         <Utensils className="w-4 h-4" />
                       </div>
                       <div className="space-y-1">
-                        <span className="text-xs font-bold text-amber-300 uppercase tracking-wider block">{t(" Tailored Meal Idea for Today ")}</span>
-                        <p className="text-xs text-amber-100/90 leading-relaxed">{t(report.customMealSuggestion)}</p>
+                        <span className="text-xs font-bold text-amber-900 uppercase tracking-wider block">{t("Tailored Meal Idea for Today")}</span>
+                        <p className="text-xs text-amber-950 font-medium leading-relaxed">{report.customMealSuggestion}</p>
                       </div>
                     </div>
-                  ))}
+                  )}
 
                   {/* Closing Coach Note */}
-                  {t(report.coachNote && (
-                    <div className="p-3 bg-slate-800/40 rounded-xl text-center text-xs text-slate-400 italic">
-                      "{t(report.coachNote)}"
+                  {report.coachNote && (
+                    <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-center text-xs text-slate-600 italic font-medium">
+                      "{report.coachNote}"
                     </div>
-                  ))}
+                  )}
                 </motion.div>
               ) : (
-                <div className="py-10 text-center space-y-3 bg-slate-800/20 border border-slate-800/60 rounded-3xl p-6">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center">
+                <div className="py-10 text-center space-y-3 bg-slate-50/60 border border-dashed border-slate-200 rounded-3xl p-6">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 text-teal-600 mx-auto flex items-center justify-center shadow-xs">
                     <Sparkles className="w-6 h-6" />
                   </div>
-                  <h4 className="text-sm font-bold text-white">{t("No Audit Run Yet for Today")}</h4>
-                  <p className="text-xs text-slate-400 max-w-md mx-auto">{t(" Click \"Run Daily Audit Report\" to let Gemini AI analyze your logged meals, macro balance, hydration, and phone steps, highlighting exact mistakes to correct. ")}</p>
+                  <h4 className="text-sm font-black text-slate-900">{t("No Audit Run Yet for Today")}</h4>
+                  <p className="text-xs text-slate-500 font-medium max-w-md mx-auto">
+                    {t("Click \"Run Daily Audit Report\" to let Gemini AI analyze your logged meals, macro balance, hydration, and phone steps, highlighting exact mistakes to correct.")}
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           ) : (
             /* Tab: Interactive AI Chat */
-            <div className="flex flex-col h-[400px] space-y-4">
+            <div className="flex flex-col h-[420px] space-y-4">
               <div className="flex-1 overflow-y-auto space-y-3 pe-1">
-                {t(chatMessages.map((msg, index) => (
+                {chatMessages.map((msg, index) => (
                   <div
                     key={index}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+                      className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed shadow-2xs ${
                         msg.role === 'user'
-                          ? 'bg-emerald-500 text-slate-950 font-medium rounded-tr-none'
-                          : 'bg-slate-800 text-slate-200 border border-slate-700/80 rounded-tl-none'
+                          ? 'bg-teal-600 text-white font-medium rounded-tr-none'
+                          : 'bg-slate-50 text-slate-800 border border-slate-200/80 font-medium rounded-tl-none'
                       }`}
                     >
-                      {t(msg.text)}
-                    </div>
-                  </div>
-                )))}
-                {t(isChatSending && (
-                  <div className="flex justify-start">
-                    <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700/80 flex items-center gap-2 text-xs text-slate-400">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
-                      <span>{t("Gemini is thinking...")}</span>
+                      {msg.text}
                     </div>
                   </div>
                 ))}
+                {isChatSending && (
+                  <div className="flex justify-start">
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex items-center gap-2 text-xs text-slate-500 font-medium shadow-2xs">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-600" />
+                      <span>{t("Gemini is thinking...")}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Chat Input */}
-              <form onSubmit={handleSendMessage} className="flex gap-2 pt-2 border-t border-slate-800">
+              <form onSubmit={handleSendMessage} className="flex gap-2 pt-3 border-t border-slate-100">
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder={t("Ask anything (e.g. 'How can I get 40g more protein?')...")}
-                  className="flex-1 px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-500 placeholder:text-slate-500"
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-teal-500 focus:bg-white placeholder:text-slate-400 font-medium"
                 />
                 <button
                   type="submit"
                   disabled={!chatInput.trim() || isChatSending}
-                  className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all disabled:opacity-50"
+                  className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all disabled:opacity-40 shadow-xs active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
               </form>
             </div>
-          ))}
+          )}
         </div>
       </motion.div>
     </div>
   );
 };
+
+export { AICoachSection } from './AICoachSection';

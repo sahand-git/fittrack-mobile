@@ -1,4 +1,13 @@
-import { UserProfile, Gender, ActivityLevel, FitnessGoal } from '../types';
+import type { UserProfile, Gender, ActivityLevel, FitnessGoal, DayLog, WeightEntry } from '../types';
+
+export function calorieBudget(profile: Pick<UserProfile,'targetCalories'|'includeStepsInCalorieBudget'>, day: Pick<DayLog,'stepCaloriesBurned'>): number {
+  // TDEE includes the selected activity level; workouts are informational.
+  return profile.targetCalories + (profile.includeStepsInCalorieBudget === true ? Math.max(0, day.stepCaloriesBurned || 0) : 0);
+}
+
+export function shouldUpdateCurrentWeight(history: readonly WeightEntry[], date: string): boolean {
+  return !history.some(entry => entry.date > date);
+}
 
 export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, { label: string; multiplier: number; desc: string }> = {
   sedentary: { label: 'Sedentary', multiplier: 1.2, desc: 'Little to no exercise, desk job' },

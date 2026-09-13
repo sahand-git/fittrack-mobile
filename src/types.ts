@@ -4,46 +4,6 @@ export type FitnessGoal = 'fat_loss_aggressive' | 'fat_loss_moderate' | 'mainten
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export type ExerciseCategory = 'strength' | 'cardio' | 'hiit' | 'sports' | 'flexibility';
 
-export interface Micronutrients {
-  calciumMg?: number;
-  ironMg?: number;
-  magnesiumMg?: number;
-  potassiumMg?: number;
-  zincMg?: number;
-  vitaminCmg?: number;
-  vitaminDmcg?: number;
-  vitaminB12mcg?: number;
-}
-
-export type NutrientSourceType = 'manual' | 'supplement';
-
-export interface NutrientIntakeEntry {
-  id: string;
-  nutrient: keyof Micronutrients;
-  amount: number;
-  unit: 'mg' | 'mcg';
-  sourceType: NutrientSourceType;
-  sourceName?: string;
-  note?: string;
-  loggedAt: string;
-}
-
-export interface SupplementReminder {
-  id: string;
-  name: string;
-  amount: string;
-  time: string;
-  enabled: boolean;
-  nutrients?: Micronutrients;
-}
-
-export interface ReminderSettings {
-  enabled: boolean;
-  mealTimes: Partial<Record<'breakfast' | 'lunch' | 'dinner', string>>;
-  water: { enabled: boolean; start: string; end: string; intervalMinutes: number };
-  supplements: SupplementReminder[];
-}
-
 export interface UserProfile {
   name: string;
   email: string;
@@ -67,16 +27,35 @@ export interface UserProfile {
   targetFat: number;
   profileCompleted: boolean;
   onboardingVersion?: number;
-  reminderSetupCompleted?: boolean;
-  reminders?: ReminderSettings;
   customMacroSplit?: {
     proteinPercent: number;
     carbsPercent: number;
     fatPercent: number;
   };
+  supplementSchedule?: {
+    enabled: boolean;
+    frequency: 'daily_morning' | 'twice_daily' | 'interval_4h' | 'interval_6h' | 'interval_8h' | 'interval_12h';
+    preferredTime?: string;
+  };
+  isPremium?: boolean;
 }
 
-export interface FoodNutrients extends Micronutrients {
+export type PremiumFeature = 'barcode' | 'ai_plate' | 'gemini_coach' | 'smart_text' | 'vitamins';
+
+export interface LoggedSupplement {
+  id: string;
+  name: string;
+  category: 'vitamin' | 'mineral' | 'supplement' | 'other';
+  dosage: string;
+  icon?: string;
+  loggedAt: string;
+  part?: 'morning' | 'noon' | 'evening' | 'bedtime';
+  amount?: number;
+  unit?: string;
+  taken?: boolean;
+}
+
+export interface FoodNutrients {
   calories: number;
   protein: number;
   carbs: number;
@@ -84,6 +63,15 @@ export interface FoodNutrients extends Micronutrients {
   fiber?: number;
   sugars?: number;
   sodium?: number; // in mg
+  vitaminA?: number; // in mcg
+  vitaminC?: number; // in mg
+  vitaminD?: number; // in mcg
+  vitaminB12?: number; // in mcg
+  calcium?: number; // in mg
+  iron?: number; // in mg
+  potassium?: number; // in mg
+  magnesium?: number; // in mg
+  zinc?: number; // in mg
 }
 
 export interface FoodItem extends FoodNutrients {
@@ -119,6 +107,15 @@ export interface LoggedMealItem {
   fiber?: number;
   sugars?: number;
   sodium?: number;
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminB12?: number;
+  calcium?: number;
+  iron?: number;
+  potassium?: number;
+  magnesium?: number;
+  zinc?: number;
   imageUrl?: string;
   loggedAt: string;
 }
@@ -161,12 +158,10 @@ export interface DayLog {
     snack: LoggedMealItem[];
   };
   waterMl: number;
-  waterLoggedAt?: string[];
-  supplementsTaken?: string[];
-  nutrientIntakes?: NutrientIntakeEntry[];
   steps: number;
   stepCaloriesBurned: number;
   workouts: WorkoutEntry[];
+  supplements?: LoggedSupplement[];
   notes?: string;
   aiReport?: AICoachReport;
 }

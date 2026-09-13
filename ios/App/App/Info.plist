@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>NSHealthShareUsageDescription</key>
-	<string>FitTrack reads your step count to show your daily activity and estimate your calorie budget.</string>
+	<string>Calorie Pewar reads your step count to show your daily activity and estimate your calorie budget.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>FitTrack uses motion data when you start the phone step counter.</string>
+	<string>Calorie Pewar uses motion data when you start the phone step counter.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>FitTrack uses the camera when you choose to scan a food barcode.</string>
+	<string>Calorie Pewar uses the camera when you choose to scan a food barcode.</string>
 	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>FitTrack</string>
+	<string>Calorie Pewar</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

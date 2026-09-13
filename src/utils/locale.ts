@@ -19,9 +19,16 @@ export const aiLanguageInstruction=()=>` Write all user-facing prose in ${langua
 function applyDirection(){if(typeof document!=='undefined'){document.documentElement.lang=language;document.documentElement.dir=language==='en'?'ltr':'rtl';}}
 applyDirection();
 export function setLocale(next:Locale){language=next;try{localStorage.setItem(storageKey,next);}catch{}applyDirection();listeners.forEach(fn=>fn());}
-export function useLocale(){return useSyncExternalStore(fn=>{listeners.add(fn);return()=>{listeners.delete(fn);};},getLocale,()=> 'en' as Locale);}
+export function useLocale() {
+  const current = useSyncExternalStore(fn => { listeners.add(fn); return () => { listeners.delete(fn); }; }, getLocale, () => 'en' as Locale);
+  const wrapper = new String(current) as String & { t: typeof t; locale: Locale; toString: () => string; valueOf: () => string };
+  wrapper.t = t;
+  wrapper.locale = current;
+  return wrapper as any;
+}
 // Only known labels are translated. User records and external food names remain intact.
 export function t<T>(value:T):T {return (typeof value==='string'&&language!=='en'?translateText(value,language==='ar'?ar:ckb):value) as T;}
+if (typeof window !== 'undefined') { (window as any).__FITTRACK_TRANSLATE__ = t; }
 export function matchesLocalized(query:string,...values:(string|undefined)[]):boolean {
   const needle=normalizeSearch(query);
   return values.some(value=>value!==undefined&&[value,translateText(value,ar),translateText(value,ckb)].some(v=>normalizeSearch(v).includes(needle)));

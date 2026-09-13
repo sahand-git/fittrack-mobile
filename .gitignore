@@ -16,3 +16,12 @@ android/app/src/main/assets/public/
 *.mobileprovision
 
 ios/App/CapApp-SPM/symlinks/
+
+.npm-cache/
+.pnpm-store/
+coverage/
+*.pem
+*service-account*.json
+*serviceAccount*.json
+docs/test-results.txt
+docs/dependency-audit.json
