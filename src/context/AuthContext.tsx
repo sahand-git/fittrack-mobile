@@ -7,12 +7,9 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWith
   sendEmailVerification, sendPasswordResetEmail, signOut, reload, updateProfile,
   setPersistence, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence,
   initializeAuth, GoogleAuthProvider, signInWithCredential, signInWithPopup, type User } from 'firebase/auth';
-import { deleteUser } from 'firebase/auth';
-import { deleteDoc, doc, getFirestore } from 'firebase/firestore';
 import config from '../config/firebase.json';
-import { clearGeminiKey } from '../utils/gemini';
-import { accountStorageKeys } from '../utils/account';
-import { clearWellnessNotifications } from '../utils/notifications';
+import { clearGeminiKey, configureAIAccount, refreshAIStatus, deleteServerAccount } from '../utils/gemini';
+import { clearAccountStorage } from '../utils/account';
 
 const configured = Boolean(config.apiKey && config.projectId && config.authDomain && config.appId);
 const app = configured ? initializeApp(config) : null;
@@ -40,7 +37,7 @@ export function AuthProvider({children}:{children:React.ReactNode}) {
   const stopGuest=()=>{setGuest(false);localStorage.removeItem(guestKey);};
   useEffect(()=>{
     if (!auth) return;
-    return onAuthStateChanged(auth, next=>{clearGeminiKey();setUser(next);if(next)stopGuest();setReady(true);},()=>{setUser(null);setReady(true);});
+    return onAuthStateChanged(auth, next=>{configureAIAccount(next?.uid || null,next?()=>next.getIdToken():null);setUser(next);if(next){stopGuest();void refreshAIStatus().catch(()=>{});}setReady(true);},()=>{configureAIAccount(null,null);setUser(null);setReady(true);});
   },[]);
   const requireAuth=()=>{if(!auth)throw new Error('Login setup is not finished.');return auth;};
   const value:AuthState={user,guest,ready,configured,
@@ -51,7 +48,20 @@ export function AuthProvider({children}:{children:React.ReactNode}) {
       await setPersistence(service,remember?durablePersistence:browserSessionPersistence);
       const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
       await completeGoogleLogin(Capacitor.isNativePlatform(),{
-        chooseNativeAccount:()=>FirebaseAuthentication.signInWithGoogle({skipNativeAuth:true}),
+        chooseNativeAccount: async () => {
+          try {
+            return await FirebaseAuthentication.signInWithGoogle({
+              skipNativeAuth: true,
+              useCredentialManager: true
+            });
+          } catch (e: any) {
+            console.warn('Credential manager Google sign-in failed, attempting legacy fallback:', e);
+            return await FirebaseAuthentication.signInWithGoogle({
+              skipNativeAuth: true,
+              useCredentialManager: false
+            });
+          }
+        },
         verifyIdToken:token=>signInWithCredential(service,GoogleAuthProvider.credential(token)),
         openWebSignIn:()=>signInWithPopup(service,provider),
       });
@@ -60,12 +70,13 @@ export function AuthProvider({children}:{children:React.ReactNode}) {
     resetPassword:async(email)=>{await sendPasswordResetEmail(requireAuth(),email.trim());},
     resendVerification:async()=>{const current=requireAuth().currentUser;if(!current)throw new Error('Sign in first.');await sendEmailVerification(current);},
     checkVerification:async()=>{const current=requireAuth().currentUser;if(!current)return false;await reload(current);await current.getIdToken(true);setUser(current);setRevision(n=>n+1);return current.emailVerified;},
-    continueAsGuest:()=>{if(user)return;clearGeminiKey();localStorage.setItem(guestKey,'true');setGuest(true);},
-    deleteAccount:async()=>{const current=requireAuth().currentUser;if(!current||!app)throw new Error('Sign in first.');const uid=current.uid;await deleteDoc(doc(getFirestore(app),'fitnessBackups',uid)).catch(error=>{if((error as {code?:string}).code!=='permission-denied')throw error;});await deleteUser(current);const keys=accountStorageKeys(uid);Object.values(keys).forEach(key=>localStorage.removeItem(key));await clearWellnessNotifications();clearGeminiKey();stopGuest();setUser(null);},
+    continueAsGuest:()=>{if(user)return;localStorage.setItem(guestKey,'true');setGuest(true);},
+    deleteAccount:async()=>{const current=requireAuth().currentUser;if(!current)throw new Error('Sign in first.');const uid=current.uid;await current.getIdToken(true);await deleteServerAccount();clearGeminiKey();configureAIAccount(null,null);try{clearAccountStorage(localStorage,uid);}finally{await signOut(requireAuth());stopGuest();setUser(null);}},
     logout:async()=>{
+      clearGeminiKey();
       if(auth)await signOut(auth);
-      await clearWellnessNotifications();
-      clearGeminiKey();stopGuest();setUser(null);
+      configureAIAccount(null,null);
+      stopGuest();setUser(null);
       // Native auth is skipped, but discard Google's cached chooser credentials too.
       if(Capacitor.isNativePlatform())await FirebaseAuthentication.signOut().catch(()=>{});
     },

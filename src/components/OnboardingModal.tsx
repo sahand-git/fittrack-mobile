@@ -42,45 +42,53 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
   const [unitSystem, setUnitSystem] = useState<'metric' | 'imperial'>('metric');
 
   // Form states
-  const [name, setName] = useState<string>(profile.name);
-  const [email, setEmail] = useState<string>(profile.email);
+  const [name, setName] = useState<string>(profile.name || '');
+  const [email, setEmail] = useState<string>(profile.email || '');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [gender, setGender] = useState<Gender>(profile.gender);
-  const [age, setAge] = useState<number>(profile.name ? profile.age : 0);
+  const [gender, setGender] = useState<Gender>(profile.gender || 'male');
+  const [age, setAge] = useState<number>(profile.age || 26);
 
   // Height / Weight
-  const [heightCm, setHeightCm] = useState<number>(profile.name ? profile.heightCm : 0);
-  const [weightKg, setWeightKg] = useState<number>(profile.name ? profile.weightKg : 0);
-  const [targetWeightKg, setTargetWeightKg] = useState<number>(profile.name ? profile.targetWeightKg : 0);
+  const [heightCm, setHeightCm] = useState<number>(profile.heightCm || 175);
+  const [weightKg, setWeightKg] = useState<number>(profile.weightKg || 75);
+  const [targetWeightKg, setTargetWeightKg] = useState<number>(profile.targetWeightKg || 70);
 
   // Imperial helper states
-  const [heightFt, setHeightFt] = useState<number>(5);
-  const [heightIn, setHeightIn] = useState<number>(9);
-  const [weightLbs, setWeightLbs] = useState<number>(165);
-  const [targetWeightLbs, setTargetWeightLbs] = useState<number>(154);
+  const initialFtIn = cmToFtIn(profile.heightCm || 175);
+  const [heightFt, setHeightFt] = useState<number>(initialFtIn.ft);
+  const [heightIn, setHeightIn] = useState<number>(initialFtIn.in);
+  const [weightLbs, setWeightLbs] = useState<number>(kgToLbs(profile.weightKg || 75));
+  const [targetWeightLbs, setTargetWeightLbs] = useState<number>(kgToLbs(profile.targetWeightKg || 70));
 
   // Lifestyle & Goals
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(profile.activityLevel);
-  const [goal, setGoal] = useState<FitnessGoal>(profile.goal);
-  const [includeStepsInCalorieBudget, setIncludeStepsInCalorieBudget] = useState<boolean>(profile.includeStepsInCalorieBudget);
-  const [stepGoal, setStepGoal] = useState<number>(profile.stepGoal);
-  const [waterGoalMl, setWaterGoalMl] = useState<number>(profile.waterGoalMl);
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(profile.activityLevel || 'moderate');
+  const [goal, setGoal] = useState<FitnessGoal>(profile.goal || 'fat_loss_moderate');
+  const [includeStepsInCalorieBudget, setIncludeStepsInCalorieBudget] = useState<boolean>(profile.includeStepsInCalorieBudget ?? false);
+  const [stepGoal, setStepGoal] = useState<number>(profile.stepGoal || 10000);
+  const [waterGoalMl, setWaterGoalMl] = useState<number>(profile.waterGoalMl || 2500);
 
   // Real-time calculation
-  const calculated = calculateTargets(gender, weightKg, heightCm, age, activityLevel, goal);
+  const calculated = calculateTargets(gender, weightKg || 75, heightCm || 175, age || 26, activityLevel, goal);
 
   const handleUnitSystemChange = (system: 'metric' | 'imperial') => {
     setUnitSystem(system);
     if (system === 'imperial') {
-      const { ft, in: inch } = cmToFtIn(heightCm);
+      const safeCm = heightCm || 175;
+      const safeKg = weightKg || 75;
+      const safeTargetKg = targetWeightKg || 70;
+      const { ft, in: inch } = cmToFtIn(safeCm);
       setHeightFt(ft);
       setHeightIn(inch);
-      setWeightLbs(kgToLbs(weightKg));
-      setTargetWeightLbs(kgToLbs(targetWeightKg));
+      setWeightLbs(kgToLbs(safeKg));
+      setTargetWeightLbs(kgToLbs(safeTargetKg));
     } else {
-      setHeightCm(ftInToCm(heightFt, heightIn));
-      setWeightKg(lbsToKg(weightLbs));
-      setTargetWeightKg(lbsToKg(targetWeightLbs));
+      const safeFt = heightFt || 5;
+      const safeIn = heightIn || 9;
+      const safeLbs = weightLbs || 165;
+      const safeTargetLbs = targetWeightLbs || 154;
+      setHeightCm(ftInToCm(safeFt, safeIn));
+      setWeightKg(lbsToKg(safeLbs));
+      setTargetWeightKg(lbsToKg(safeTargetLbs));
     }
   };
 
@@ -102,14 +110,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
 
   const validateStep = (page: number): string | null => {
     if (page === 1) {
-      if (!name.trim()) return 'Please enter your name or nickname.';
-      if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Enter a valid email or leave it blank.';
-      if (!Number.isInteger(age) || age < 12 || age > 100) return 'Enter an age between 12 and 100.';
+      if (!name.trim()) return t('Please enter your name or nickname.');
+      if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return t('Enter a valid email or leave it blank.');
+      if (!Number.isInteger(age) || age < 12 || age > 100) return t('Enter an age between 12 and 100.');
     }
     if (page === 2) {
-      if (!Number.isFinite(heightCm) || heightCm < 100 || heightCm > 250) return 'Enter a height between 100 and 250 cm (or the equivalent in feet and inches).';
-      if (!Number.isFinite(weightKg) || weightKg < 30 || weightKg > 300) return 'Enter a weight between 30 and 300 kg (or the equivalent in pounds).';
-      if (!Number.isFinite(targetWeightKg) || targetWeightKg < 30 || targetWeightKg > 300) return 'Enter a target weight between 30 and 300 kg (or the equivalent in pounds).';
+      if (!Number.isFinite(heightCm) || heightCm < 100 || heightCm > 250) return t('Enter a height between 100 and 250 cm (or the equivalent in feet and inches).');
+      if (!Number.isFinite(weightKg) || weightKg < 30 || weightKg > 300) return t('Enter a weight between 30 and 300 kg (or the equivalent in pounds).');
+      if (!Number.isFinite(targetWeightKg) || targetWeightKg < 30 || targetWeightKg > 300) return t('Enter a target weight between 30 and 300 kg (or the equivalent in pounds).');
     }
     return null;
   };
@@ -132,26 +140,27 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
 
     const finalProfile: UserProfile = {
       ...profile,
-      name: name.trim(),
+      name: name.trim() || 'Calorie Pewar User',
       email: email.trim().toLowerCase(),
       isGoogleConnected: false,
       gender,
-      age: Math.max(12, age),
-      heightCm: Math.max(100, heightCm),
-      weightKg: Math.max(30, weightKg),
-      targetWeightKg: Math.max(30, targetWeightKg),
+      age: Math.max(12, age || 26),
+      heightCm: Math.max(100, heightCm || 175),
+      weightKg: Math.max(30, weightKg || 75),
+      targetWeightKg: Math.max(30, targetWeightKg || 70),
       activityLevel,
       goal,
       includeStepsInCalorieBudget,
-      stepGoal: Math.max(1000, stepGoal),
-      waterGoalMl: Math.max(1000, waterGoalMl),
+      stepGoal: Math.max(1000, stepGoal || 10000),
+      waterGoalMl: Math.max(1000, waterGoalMl || 2500),
       bmr: calculated.bmr,
       tdee: calculated.tdee,
       targetCalories: calculated.targetCalories,
       targetProtein: calculated.targetProtein,
       targetCarbs: calculated.targetCarbs,
       targetFat: calculated.targetFat,
-      profileCompleted: true
+      profileCompleted: true,
+      onboardingVersion: 1
     };
 
     completeOnboarding(finalProfile);
@@ -186,7 +195,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                 <p className="text-xs text-slate-400">{t("Your details help estimate daily nutrition targets.")}</p>
               </div>
             </div>
-            <div className="text-xs font-semibold px-3 py-1 bg-slate-800/80 border border-slate-700 rounded-full text-emerald-400">{t(" Step ")}{t(step)}{t(" of 4 ")}</div>
+            <div className="text-xs font-semibold px-3 py-1 bg-slate-800/80 border border-slate-700 rounded-full text-emerald-400 shrink-0 whitespace-nowrap">{t(" Step ")}{t(step)}{t(" of 4 ")}</div>
           </div>
 
           {/* Progress Bar */}
@@ -317,17 +326,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                     <button
                       type="button"
                       onClick={() => handleUnitSystemChange('metric')}
-                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                         unitSystem === 'metric' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                       }`}
-                    >{t(" Metric (kg/cm) ")}</button>
+                    >{t("Metric (kg/cm)")}</button>
                     <button
                       type="button"
                       onClick={() => handleUnitSystemChange('imperial')}
-                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                         unitSystem === 'imperial' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                       }`}
-                    >{t(" Imperial (lbs/ft) ")}</button>
+                    >{t("Imperial (lbs/ft)")}</button>
                   </div>
                 </div>
 
@@ -523,12 +532,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
 
                 {/* CRITICAL USER REQUIREMENT: Step Calories in Calorie Allowance Toggle */}
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-800/70 to-slate-800/30 border border-slate-700/80 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                  <div className="flex items-center justify-between gap-3 text-start">
+                    <div className="flex items-center gap-2.5 text-start min-w-0 flex-1">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
                         <Footprints className="w-4 h-4" />
                       </div>
-                      <div>
+                      <div className="text-start min-w-0 flex-1">
                         <div className="text-xs font-semibold text-white flex items-center gap-1.5">
                           <span>{t("Add Step Burn to Daily Calorie Budget?")}</span>
                         </div>
@@ -540,20 +549,22 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
                       </div>
                     </div>
 
-                    <button
-                      id="toggle-steps-calorie-budget"
-                      type="button"
-                      onClick={() => setIncludeStepsInCalorieBudget(!includeStepsInCalorieBudget)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        includeStepsInCalorieBudget ? 'bg-emerald-500' : 'bg-slate-700'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          includeStepsInCalorieBudget ? 'translate-x-6' : 'translate-x-1'
+                    <div dir="ltr" className="inline-flex shrink-0 ms-3">
+                      <button
+                        id="toggle-steps-calorie-budget"
+                        type="button"
+                        onClick={() => setIncludeStepsInCalorieBudget(!includeStepsInCalorieBudget)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          includeStepsInCalorieBudget ? 'bg-emerald-500' : 'bg-slate-700'
                         }`}
-                      />
-                    </button>
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            includeStepsInCalorieBudget ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -635,8 +646,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
             <button
               type="button"
               onClick={() => setStep(step - 1)}
-              className="px-5 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-xs font-semibold hover:bg-slate-800 transition-all"
-            >{t(" Back ")}</button>
+              className="px-5 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-xs font-semibold hover:bg-slate-800 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+            >{t("Back")}</button>
           ) : (
             <div />
           ))}
@@ -646,7 +657,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
               id="button-onboarding-next"
               type="button"
               onClick={handleNextStep}
-              className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
+              className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer shrink-0 whitespace-nowrap"
             >
               <span>{t("Next")}</span>
               <ArrowRight className="w-4 h-4" />
@@ -656,7 +667,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen = true,
               id="button-onboarding-finish"
               type="button"
               onClick={handleFinish}
-              className="px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 text-sm font-black flex items-center gap-2 transition-all shadow-xl shadow-emerald-500/30 active:scale-95"
+              className="px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 text-sm font-black flex items-center gap-2 transition-all shadow-xl shadow-emerald-500/30 active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
             >
               <CheckCircle2 className="w-5 h-5" />
               <span>{t("Start Tracking")}</span>

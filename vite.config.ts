@@ -9,6 +9,7 @@ const projectRoot = fileURLToPath(new URL('.', import.meta.url));
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
+    build: { outDir: 'dist/client', sourcemap: false },
     resolve: {
       alias: {
         '@': path.resolve(projectRoot, '.'),

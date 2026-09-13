@@ -1,6 +1,6 @@
 // A Google identity is accepted only after Firebase verifies its credential.
 export async function completeGoogleLogin<T>(native: boolean, actions: {
-  chooseNativeAccount: () => Promise<{credential?: {idToken?: string | null}}>;
+  chooseNativeAccount: () => Promise<{credential?: {idToken?: string | null} | null}>;
   verifyIdToken: (token: string) => Promise<T>;
   openWebSignIn: () => Promise<T>;
 }): Promise<T> {

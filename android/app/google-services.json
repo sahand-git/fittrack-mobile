@@ -1,41 +1,50 @@
 {
   "project_info": {
-    "project_number": "552347341777",
-    "project_id": "fittrack-mobile-3db2a",
-    "storage_bucket": "fittrack-mobile-3db2a.firebasestorage.app"
+    "project_number": "488088161993",
+    "project_id": "fit-track-v2",
+    "storage_bucket": "fit-track-v2.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:552347341777:android:1d60492117786f6bc946f0",
+        "mobilesdk_app_id": "1:488088161993:android:63091d9892ddffeaf2c718",
         "android_client_info": {
-          "package_name": "com.sahand.fitness"
+          "package_name": "com.sahand.fittrackv2"
         }
       },
       "oauth_client": [
         {
-          "client_id": "552347341777-uqmejcsuf8i5pjo56c0g6hj77si03530.apps.googleusercontent.com",
+          "client_id": "488088161993-d7rdimcgcc87js9psnqnec8fnudsglgf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sahand.fittrackv2",
+            "certificate_hash": "9f369119be7d08240fb603b6e135d6a237fc72bf"
+          }
+        },
+        {
+          "client_id": "488088161993-d7rdimcgcc87js9psnqnec8fnudsglgf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sahand.fittrackv2",
+            "certificate_hash": "e84333d77da8a852031aa8248a9dcb9bf05648de"
+          }
+        },
+        {
+          "client_id": "488088161993-q8gj1uhrq261elm2tu1v0serk02ahpba.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyB656jUno7ByEKWdzlBKYEr2aliy00Kebs"
+          "current_key": ""
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "552347341777-uqmejcsuf8i5pjo56c0g6hj77si03530.apps.googleusercontent.com",
+              "client_id": "488088161993-q8gj1uhrq261elm2tu1v0serk02ahpba.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "552347341777-ijh25h7ls0csk37gc383q7u603qcu2tp.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.sahand.fitness"
-              }
             }
           ]
         }

@@ -13,5 +13,6 @@ export function foodCategory(food: Pick<FoodItem,'name'|'category'>): string {
   if (['nuts','nut butter'].includes(category))return 'Nuts & Seeds';
   if (['snacks','supplements'].includes(category))return 'Snacks & Protein';
   if (category==='dairy')return 'Eggs & Dairy';
+  if (category==='kurdish')return 'Kurdish & Regional';
   return 'Other';
 }

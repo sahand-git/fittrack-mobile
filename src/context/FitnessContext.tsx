@@ -1,34 +1,25 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   UserProfile,
   DayLog,
   FoodItem,
-  LoggedMealItem,
   WorkoutEntry,
   MealType,
   WeightEntry,
   AICoachReport,
-  NutrientIntakeEntry
+  LoggedSupplement
 } from '../types';
-import type { ReminderSettings } from '../types';
-import { calculateTargets, calculateStepCalories } from '../utils/calculator';
+import { calculateTargets, calculateStepCalories, shouldUpdateCurrentWeight } from '../utils/calculator';
 import { VERIFIED_FOOD_DATABASE } from '../data/foodDatabase';
 import { getTodayDateString } from '../utils/date';
-import { clearGeminiKey } from '../utils/gemini';
 import { exportBackupFile } from '../utils/backup';
-import { accountStorageKeys } from '../utils/account';
+import { accountStorageKeys, clearAccountStorage } from '../utils/account';
 import { parseBackup, serializeBackup, nextRevision, type CloudSnapshot } from '../utils/cloudBackupCore';
 import { readCloudBackup, writeCloudBackup } from '../utils/cloudBackup';
-import { clearWellnessNotifications, syncWellnessNotifications } from '../utils/notifications';
-import { scaleMicronutrients } from '../utils/micronutrients';
-import { useLocale } from '../utils/locale';
 
-export const DEFAULT_REMINDERS: ReminderSettings = {
-  enabled: false,
-  mealTimes: { breakfast: '08:00', lunch: '13:00', dinner: '19:00' },
-  water: { enabled: true, start: '09:00', end: '21:00', intervalMinutes: 120 },
-  supplements: []
-};
+import { createLoggedFood } from '../utils/nutrition';
+import { readStoredJSON, persistStoredJSON, persistRestore, collectCorruptRecovery } from '../utils/storage';
+import { useAIStatus } from '../utils/gemini';
 
 const DEFAULT_PROFILE: UserProfile = {
   name: '',
@@ -40,7 +31,7 @@ const DEFAULT_PROFILE: UserProfile = {
   targetWeightKg: 70,
   activityLevel: 'moderate',
   goal: 'fat_loss_moderate',
-  includeStepsInCalorieBudget: true,
+  includeStepsInCalorieBudget: false,
   stepGoal: 10000,
   waterGoalMl: 2500,
   bmr: 1714,
@@ -51,8 +42,7 @@ const DEFAULT_PROFILE: UserProfile = {
   targetFat: 73,
   profileCompleted: false,
   isGoogleConnected: false,
-  reminderSetupCompleted: false,
-  reminders: DEFAULT_REMINDERS
+  isPremium: false
 };
 
 export const createEmptyDayLog = (date: string): DayLog => ({
@@ -64,10 +54,10 @@ export const createEmptyDayLog = (date: string): DayLog => ({
     snack: []
   },
   waterMl: 0,
-  nutrientIntakes: [],
   steps: 0,
   stepCaloriesBurned: 0,
-  workouts: []
+  workouts: [],
+  supplements: []
 });
 
 interface FitnessContextType {
@@ -90,16 +80,15 @@ interface FitnessContextType {
   addCustomFood: (food: Omit<FoodItem, 'id'>) => FoodItem;
   addWorkout: (workout: Omit<WorkoutEntry, 'id' | 'loggedAt'>) => void;
   removeWorkout: (workoutId: string) => void;
+  logSupplement: (supplement: Omit<LoggedSupplement, 'id' | 'loggedAt'>) => void;
+  updateSupplement: (supplementId: string, updates: Partial<LoggedSupplement>) => void;
+  removeSupplement: (supplementId: string) => void;
+  setDailySupplements: (supplements: LoggedSupplement[]) => void;
   updateWater: (deltaMl: number) => void;
   setWaterAmount: (amountMl: number) => void;
   updateSteps: (stepsOrUpdater: number | ((prev: number) => number)) => void;
   addWeightEntry: (weightKg: number, bodyFat?: number, note?: string) => void;
   saveDayAIReport: (report: AICoachReport) => void;
-  updateReminderSettings: (settings: ReminderSettings) => void;
-  markSupplementTaken: (supplementId: string, taken: boolean) => void;
-  addNutrientIntake: (input: Omit<NutrientIntakeEntry, 'id'>) => void;
-  updateNutrientIntake: (id: string, input: Omit<NutrientIntakeEntry, 'id'>) => void;
-  removeNutrientIntake: (id: string) => void;
   connectGoogleAccount: (email: string, name?: string) => Promise<boolean>;
   disconnectGoogleAccount: () => void;
   resetAccountAndData: () => void;
@@ -113,72 +102,47 @@ interface FitnessContextType {
   exportBackupJSON: () => Promise<'share' | 'download'>;
   getBackupJSON: () => string;
   importBackupJSON: (jsonStr: string) => boolean;
+  isPremium: boolean;
+  exportCorruptRecoveryJSON: () => Promise<'share' | 'download'>;
+  hasCorruptRecoveryBackup: boolean;
+  storageError: string | null;
+  retryStoragePersistence: () => void;
 }
 
 const FitnessContext = createContext<FitnessContextType | undefined>(undefined);
 
 export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: string; accountName?: string; accountEmail?: string }> = ({ children, accountId, accountName, accountEmail }) => {
-  const reminderLocale = useLocale();
   const keys = accountStorageKeys(accountId);
   const STORAGE_KEY_PROFILE = keys.profile;
   const STORAGE_KEY_LOGS = keys.logs;
   const STORAGE_KEY_CUSTOM_FOODS = keys.foods;
   const STORAGE_KEY_WEIGHTS = keys.weights;
+  const initialReadError = useRef<string | null>(null);
+  const readInitial = <T,>(key: string, fallback: T, validate: (value: unknown) => boolean): T => {
+    const result = readStoredJSON(localStorage, key, fallback, validate);
+    if (result.error) initialReadError.current = result.error;
+    return result.value;
+  };
   const [profile, setProfile] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_PROFILE);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return {
-          ...DEFAULT_PROFILE,
-          ...parsed,
-          // Older releases shipped a completed sample profile. Confirm saved details once.
-          profileCompleted: parsed.profileCompleted === true && parsed.onboardingVersion === 1,
-        };
-      }
-    } catch (e) {
-      console.warn('Error reading profile from localStorage', e);
-    }
-    return { ...DEFAULT_PROFILE, name: accountName || '', email: accountEmail || '' };
+    const parsed = readInitial(STORAGE_KEY_PROFILE, DEFAULT_PROFILE, value => !!value && typeof value === 'object' && !Array.isArray(value) && typeof (value as UserProfile).weightKg === 'number');
+    return {...DEFAULT_PROFILE, ...parsed, name: parsed.name || accountName || '', email: parsed.email || accountEmail || '', isPremium: false,
+      profileCompleted: parsed.profileCompleted === true && parsed.onboardingVersion === 1};
   });
-
-  const [dailyLogs, setDailyLogs] = useState<Record<string, DayLog>>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_LOGS);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.warn('Error reading dailyLogs from localStorage', e);
-    }
-    return { [getTodayDateString()]: createEmptyDayLog(getTodayDateString()) };
-  });
-
+  const [dailyLogs, setDailyLogs] = useState<Record<string, DayLog>>(() => readInitial(STORAGE_KEY_LOGS,
+    {[getTodayDateString()]: createEmptyDayLog(getTodayDateString())}, value => !!value && typeof value === 'object' && !Array.isArray(value) && Object.values(value).every((day: any) => day && day.meals && ['breakfast','lunch','dinner','snack'].every(meal => Array.isArray(day.meals[meal])) && Array.isArray(day.workouts))));
   const [currentDate, setCurrentDate] = useState<string>(getTodayDateString());
-
-  const [customFoods, setCustomFoods] = useState<FoodItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_CUSTOM_FOODS);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Error reading custom foods', e);
-    }
-    return [];
-  });
-
+  const [customFoods, setCustomFoods] = useState<FoodItem[]>(() => readInitial(STORAGE_KEY_CUSTOM_FOODS, [], value => Array.isArray(value) && value.every(food => food && typeof food.id === 'string' && typeof food.name === 'string' && ['calories','protein','carbs','fat','servingGrams'].every(key => typeof food[key] === 'number' && Number.isFinite(food[key]) && food[key] >= 0))));
   const customFoodsRef = useRef(customFoods);
   customFoodsRef.current = customFoods;
-
-  const [weightHistory, setWeightHistory] = useState<WeightEntry[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_WEIGHTS);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Error reading weight history', e);
-    }
-    return [];
-  });
-
+  const [weightHistory, setWeightHistory] = useState<WeightEntry[]>(() => readInitial(STORAGE_KEY_WEIGHTS, [], value => Array.isArray(value) && value.every(entry => entry && typeof entry.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(entry.date) && typeof entry.weightKg === 'number' && Number.isFinite(entry.weightKg) && entry.weightKg > 0)));
+  const recoveryDataKeys = [keys.profile, keys.logs, keys.foods, keys.weights, keys.supplementRoutine];
+  const checkCorruptRecovery = () => {
+    try { return Object.keys(collectCorruptRecovery(localStorage, recoveryDataKeys)).length > 0; } catch { return false; }
+  };
+  const [hasCorruptRecoveryBackup, setHasCorruptRecoveryBackup] = useState(checkCorruptRecovery);
+  if (hasCorruptRecoveryBackup && !initialReadError.current) initialReadError.current = 'Original recovery copies are retained on this device. Export the recovery data before clearing browser storage.';
+  const [storageError, setStorageError] = useState<string | null>(initialReadError.current);
+  const failedWrites = useRef(new Set<string>());
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [cloudSnapshot, setCloudSnapshot] = useState<CloudSnapshot | null | undefined>(undefined);
@@ -188,57 +152,34 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
   const [hasRecoveryBackup, setHasRecoveryBackup] = useState(() => {
     try { return Boolean(localStorage.getItem(recoveryKey)); } catch { return false; }
   });
-  const localContent = JSON.stringify({ profile, dailyLogs, customFoods, weightHistory });
+  const readRoutineContent = () => {
+    try { return localStorage.getItem(keys.supplementRoutine) || '[]'; } catch { return 'unavailable'; }
+  };
+  const [routineContent, setRoutineContent] = useState(readRoutineContent);
+  useEffect(() => {
+    const refresh = () => setRoutineContent(readRoutineContent());
+    window.addEventListener('calorie-pewar-routine-change', refresh);
+    window.addEventListener('storage', refresh);
+    return () => { window.removeEventListener('calorie-pewar-routine-change', refresh); window.removeEventListener('storage', refresh); };
+  }, [keys.supplementRoutine]);
+  const localContent = JSON.stringify({ profile, dailyLogs, customFoods, weightHistory, routineContent });
   const cloudHasLocalChanges = backedUpContent !== localContent;
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
-  useEffect(() => { clearGeminiKey(); }, [profile.email]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      syncWellnessNotifications(profile.reminders, dailyLogs, profile.waterGoalMl).catch(error => console.warn('Could not refresh reminders', error));
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, [profile.reminders, profile.waterGoalMl, dailyLogs, reminderLocale]);
-
-  useEffect(() => {
-    const refresh = () => { if (document.visibilityState === 'visible') syncWellnessNotifications(profile.reminders, dailyLogs, profile.waterGoalMl).catch(() => undefined); };
-    document.addEventListener('visibilitychange', refresh);
-    return () => document.removeEventListener('visibilitychange', refresh);
-  }, [profile.reminders, profile.waterGoalMl, dailyLogs, reminderLocale]);
-
-  // Synchronize localStorage whenever states update
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(profile));
-    } catch (e) {
-      console.warn('Storage quota error on profile', e);
-    }
-  }, [profile]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(dailyLogs));
-    } catch (e) {
-      console.warn('Storage quota error on logs', e);
-    }
-  }, [dailyLogs]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_CUSTOM_FOODS, JSON.stringify(customFoods));
-    } catch (e) {
-      console.warn('Storage quota error on custom foods', e);
-    }
-  }, [customFoods]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_WEIGHTS, JSON.stringify(weightHistory));
-    } catch (e) {
-      console.warn('Storage quota error on weights', e);
-    }
-  }, [weightHistory]);
+  const persist = (key: string, value: unknown) => {
+    try { persistStoredJSON(localStorage, key, value); failedWrites.current.delete(key); }
+    catch { failedWrites.current.add(key); }
+    setHasCorruptRecoveryBackup(checkCorruptRecovery());
+    setStorageError(failedWrites.current.size ? 'Changes are not saved on this device. Keep this page open, export a backup, free storage space and retry.' : initialReadError.current);
+  };
+  const retryStoragePersistence = () => {
+    persist(STORAGE_KEY_PROFILE, profile); persist(STORAGE_KEY_LOGS, dailyLogs);
+    persist(STORAGE_KEY_CUSTOM_FOODS, customFoods); persist(STORAGE_KEY_WEIGHTS, weightHistory);
+  };
+  useEffect(() => { persist(STORAGE_KEY_PROFILE, profile); }, [profile]);
+  useEffect(() => { persist(STORAGE_KEY_LOGS, dailyLogs); }, [dailyLogs]);
+  useEffect(() => { persist(STORAGE_KEY_CUSTOM_FOODS, customFoods); }, [customFoods]);
+  useEffect(() => { persist(STORAGE_KEY_WEIGHTS, weightHistory); }, [weightHistory]);
 
   // Combined searchable food database
   const allFoodDatabase = [...customFoods, ...VERIFIED_FOOD_DATABASE];
@@ -251,14 +192,43 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
     busyRef.current = true; setIsSyncing(true);
     try { await action(); } finally { busyRef.current = false; setIsSyncing(false); }
   };
+  useEffect(() => {
+    if (!accountId) {
+      setCloudSnapshot(null);
+      return;
+    }
+    let isCurrent = true;
+    readCloudBackup(accountId)
+      .then(snapshot => {
+        if (!isCurrent) return;
+        setCloudSnapshot(snapshot);
+        if (snapshot) {
+          setLastSyncedAt(snapshot.updatedAt);
+        }
+      })
+      .catch(err => {
+        console.warn('Auto cloud check notice:', err);
+        if (isCurrent) setCloudSnapshot(null);
+      });
+    return () => { isCurrent = false; };
+  }, [accountId]);
+
   const refreshCloudBackup = () => cloudAction(async () => {
     setCloudSnapshot(undefined);
     setCloudSnapshot(await readCloudBackup(accountId));
   });
   const syncWithCloud = () => cloudAction(async () => {
-    if (cloudSnapshot === undefined) throw new Error('Check cloud backup before saving.');
+    let currentSnap = cloudSnapshot;
+    if (currentSnap === undefined) {
+      try {
+        currentSnap = await readCloudBackup(accountId);
+        setCloudSnapshot(currentSnap);
+      } catch (err) {
+        console.warn('Could not read existing backup before sync', err);
+      }
+    }
     const content = localContent;
-    const result = await writeCloudBackup(accountId, JSON.parse(getBackupJSON()), cloudSnapshot?.revision ?? null);
+    const result = await writeCloudBackup(accountId, JSON.parse(getBackupJSON()), currentSnap?.revision ?? null);
     setCloudSnapshot(result); setLastSyncedAt(result.updatedAt); setBackedUpContent(content);
   });
   const restoreCloudBackup = () => cloudAction(async () => {
@@ -268,21 +238,23 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
     if (!latest || !importBackupJSON(latest.payload)) throw new Error('Restore could not save safely on this device. Free storage space, export your data, and try again.');
     const restored = parseBackup(latest.payload);
     setCloudSnapshot(latest); setLastSyncedAt(latest.updatedAt);
-    setBackedUpContent(JSON.stringify({profile:restored.profile,dailyLogs:restored.dailyLogs,customFoods:restored.customFoods,weightHistory:restored.weightHistory}));
+    setBackedUpContent(JSON.stringify({profile:restored.profile,dailyLogs:restored.dailyLogs,customFoods:restored.customFoods,weightHistory:restored.weightHistory,routineContent:JSON.stringify(restored.settings?.supplementRoutine ?? JSON.parse(readRoutineContent()))}));
   });
   const connectGoogleAccount = async (_email: string, _name?: string) => false;
-  const disconnectGoogleAccount = () => { clearGeminiKey(); setProfile(prev => ({ ...prev, isGoogleConnected: false })); };
+  const disconnectGoogleAccount = () => { setProfile(prev => ({ ...prev, isGoogleConnected: false })); };
 
   const resetAccountAndData = () => {
-    clearWellnessNotifications().catch(() => undefined);
     try {
-      localStorage.removeItem(STORAGE_KEY_PROFILE);
-      localStorage.removeItem(STORAGE_KEY_LOGS);
-      localStorage.removeItem(STORAGE_KEY_CUSTOM_FOODS);
-      localStorage.removeItem(STORAGE_KEY_WEIGHTS);
+      clearAccountStorage(localStorage, accountId);
     } catch (e) {
-      console.warn('Error clearing localStorage', e);
+      setStorageError('Some device data could not be removed. Please retry.');
+      throw e;
     }
+    setHasRecoveryBackup(false);
+    setHasCorruptRecoveryBackup(false);
+    initialReadError.current = null;
+    setStorageError(null);
+    setRoutineContent('[]');
     setProfile(DEFAULT_PROFILE);
     setDailyLogs({ [getTodayDateString()]: createEmptyDayLog(getTodayDateString()) });
     setCustomFoods([]);
@@ -339,28 +311,12 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
   };
 
   const logFood = (mealType: MealType, food: FoodItem, servingsCount: number) => {
-    const mult = Math.max(0.01, servingsCount);
-    const loggedItem: LoggedMealItem = {
-      id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      foodId: food.id,
-      name: food.name,
-      brand: food.brand,
-      barcode: food.barcode,
-      mealType,
-      servingSize: food.servingSize,
-      servingGrams: Math.round(food.servingGrams * mult),
-      servingsCount: mult,
-      calories: Math.round(food.calories * mult),
-      protein: Math.round(food.protein * mult * 10) / 10,
-      carbs: Math.round(food.carbs * mult * 10) / 10,
-      fat: Math.round(food.fat * mult * 10) / 10,
-      fiber: food.fiber ? Math.round(food.fiber * mult * 10) / 10 : undefined,
-      sugars: food.sugars ? Math.round(food.sugars * mult * 10) / 10 : undefined,
-      sodium: food.sodium ? Math.round(food.sodium * mult) : undefined,
-      ...scaleMicronutrients(food, mult),
-      imageUrl: food.imageUrl,
-      loggedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+    if (currentDate > getTodayDateString()) {
+      return;
+    }
+    const loggedItem = createLoggedFood(food, mealType, servingsCount,
+      'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
     setDailyLogs(prev => {
       const day = prev[currentDate] || createEmptyDayLog(currentDate);
@@ -404,7 +360,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
     const next = [newFood, ...customFoodsRef.current.filter(f =>
       f.barcode && newFood.barcode ? f.barcode !== newFood.barcode : f.name !== newFood.name)];
     try {
-      localStorage.setItem(STORAGE_KEY_CUSTOM_FOODS, JSON.stringify(next));
+      persistStoredJSON(localStorage, STORAGE_KEY_CUSTOM_FOODS, next);
     } catch {
       throw new Error('Could not save this food on your phone. Free some storage space and try again.');
     }
@@ -415,6 +371,9 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
   };
 
   const addWorkout = (workoutData: Omit<WorkoutEntry, 'id' | 'loggedAt'>) => {
+    if (currentDate > getTodayDateString()) {
+      return;
+    }
     const workout: WorkoutEntry = {
       ...workoutData,
       id: 'wo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -435,18 +394,109 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
 
   const removeWorkout = (workoutId: string) => {
     setDailyLogs(prev => {
+      const next: Record<string, DayLog> = {};
+      for (const dateKey of Object.keys(prev)) {
+        const day = prev[dateKey];
+        if (day && day.workouts && day.workouts.some(w => w.id === workoutId)) {
+          next[dateKey] = {
+            ...day,
+            workouts: day.workouts.filter(w => w.id !== workoutId)
+          };
+        } else if (day) {
+          next[dateKey] = day;
+        }
+      }
+      if (!next[currentDate]) {
+        const day = prev[currentDate] || createEmptyDayLog(currentDate);
+        next[currentDate] = {
+          ...day,
+          workouts: day.workouts.filter(w => w.id !== workoutId)
+        };
+      }
+      return next;
+    });
+  };
+
+  const logSupplement = (suppData: Omit<LoggedSupplement, 'id' | 'loggedAt'>) => {
+    if (currentDate > getTodayDateString()) {
+      return;
+    }
+    const supplement: LoggedSupplement = {
+      ...suppData,
+      id: 'supp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      loggedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setDailyLogs(prev => {
       const day = prev[currentDate] || createEmptyDayLog(currentDate);
+      const updated = [supplement, ...(day.supplements || [])];
       return {
         ...prev,
         [currentDate]: {
           ...day,
-          workouts: day.workouts.filter(w => w.id !== workoutId)
+          supplements: updated
         }
       };
     });
   };
 
+  const updateSupplement = (supplementId: string, updates: Partial<LoggedSupplement>) => {
+    setDailyLogs(prev => {
+      const day = prev[currentDate];
+      if (!day || !day.supplements) return prev;
+      return {
+        ...prev,
+        [currentDate]: {
+          ...day,
+          supplements: day.supplements.map(s => (s.id === supplementId ? { ...s, ...updates } : s))
+        }
+      };
+    });
+  };
+
+  const removeSupplement = (supplementId: string) => {
+    setDailyLogs(prev => {
+      const day = prev[currentDate];
+      if (!day || !day.supplements) return prev;
+      return {
+        ...prev,
+        [currentDate]: {
+          ...day,
+          supplements: day.supplements.filter(s => s.id !== supplementId)
+        }
+      };
+    });
+  };
+
+  const setDailySupplements = (supplements: LoggedSupplement[]) => {
+    if (currentDate > getTodayDateString()) {
+      return;
+    }
+    setDailyLogs(prev => {
+      const day = prev[currentDate] || createEmptyDayLog(currentDate);
+      return {
+        ...prev,
+        [currentDate]: {
+          ...day,
+          supplements
+        }
+      };
+    });
+  };
+
+  const safeSetCurrentDate = (date: string) => {
+    const today = getTodayDateString();
+    if (date > today) {
+      setCurrentDate(today);
+      return;
+    }
+    setCurrentDate(date);
+  };
+
   const updateWater = (deltaMl: number) => {
+    if (currentDate > getTodayDateString()) {
+      return;
+    }
     setDailyLogs(prev => {
       const day = prev[currentDate] || createEmptyDayLog(currentDate);
       const newWater = Math.max(0, day.waterMl + deltaMl);
@@ -454,28 +504,32 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
         ...prev,
         [currentDate]: {
           ...day,
-          waterMl: newWater,
-          waterLoggedAt: deltaMl > 0 ? [...(day.waterLoggedAt || []), new Date().toISOString()] : day.waterLoggedAt
+          waterMl: newWater
         }
       };
     });
   };
 
   const setWaterAmount = (amountMl: number) => {
+    if (currentDate > getTodayDateString()) {
+      return;
+    }
     setDailyLogs(prev => {
       const day = prev[currentDate] || createEmptyDayLog(currentDate);
       return {
         ...prev,
         [currentDate]: {
           ...day,
-          waterMl: Math.max(0, amountMl),
-          waterLoggedAt: amountMl > day.waterMl ? [...(day.waterLoggedAt || []), new Date().toISOString()] : day.waterLoggedAt
+          waterMl: Math.max(0, amountMl)
         }
       };
     });
   };
 
   const updateSteps = (stepsOrUpdater: number | ((prev: number) => number)) => {
+    if (currentDate > getTodayDateString()) {
+      return;
+    }
     setDailyLogs(prev => {
       const day = prev[currentDate] || createEmptyDayLog(currentDate);
       const newSteps = typeof stepsOrUpdater === 'function' ? stepsOrUpdater(day.steps) : stepsOrUpdater;
@@ -493,6 +547,9 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
   };
 
   const addWeightEntry = (weightKg: number, bodyFat?: number, note?: string) => {
+    if (currentDate > getTodayDateString()) {
+      return;
+    }
     const entry: WeightEntry = {
       date: currentDate,
       weightKg: Math.round(weightKg * 10) / 10,
@@ -500,7 +557,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
       note
     };
     setWeightHistory(prev => [entry, ...prev.filter(w => w.date !== currentDate)]);
-    updateProfile({ weightKg: entry.weightKg });
+    if (shouldUpdateCurrentWeight(weightHistory, currentDate)) updateProfile({ weightKg: entry.weightKg });
   };
 
   const saveDayAIReport = (report: AICoachReport) => {
@@ -516,64 +573,6 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
     });
   };
 
-  const updateReminderSettings = (settings: ReminderSettings) => {
-    setProfile(prev => ({ ...prev, reminderSetupCompleted: true, reminders: settings }));
-  };
-
-  const markSupplementTaken = (supplementId: string, taken: boolean) => {
-    setDailyLogs(prev => {
-      const day = prev[currentDate] || createEmptyDayLog(currentDate);
-      const current = new Set(day.supplementsTaken || []);
-      if (taken) current.add(supplementId); else current.delete(supplementId);
-      return { ...prev, [currentDate]: { ...day, supplementsTaken: [...current] } };
-    });
-  };
-
-  const addNutrientIntake = (input: Omit<NutrientIntakeEntry, 'id'>) => {
-    const entry: NutrientIntakeEntry = {
-      ...input,
-      id: `nutrient_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-    };
-    setDailyLogs(prev => {
-      const day = prev[currentDate] || createEmptyDayLog(currentDate);
-      return {
-        ...prev,
-        [currentDate]: {
-          ...day,
-          nutrientIntakes: [entry, ...(day.nutrientIntakes || [])]
-        }
-      };
-    });
-  };
-
-  const updateNutrientIntake = (id: string, input: Omit<NutrientIntakeEntry, 'id'>) => {
-    setDailyLogs(prev => {
-      const day = prev[currentDate] || createEmptyDayLog(currentDate);
-      return {
-        ...prev,
-        [currentDate]: {
-          ...day,
-          nutrientIntakes: (day.nutrientIntakes || []).map(entry =>
-            entry.id === id ? { ...input, id } : entry
-          )
-        }
-      };
-    });
-  };
-
-  const removeNutrientIntake = (id: string) => {
-    setDailyLogs(prev => {
-      const day = prev[currentDate] || createEmptyDayLog(currentDate);
-      return {
-        ...prev,
-        [currentDate]: {
-          ...day,
-          nutrientIntakes: (day.nutrientIntakes || []).filter(entry => entry.id !== id)
-        }
-      };
-    });
-  };
-
   const getBackupJSON = () => {
     const data = {
       version: '2.0',
@@ -581,7 +580,8 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
       profile,
       dailyLogs,
       customFoods,
-      weightHistory
+      weightHistory,
+      settings: { supplementRoutine: JSON.parse(localStorage.getItem(keys.supplementRoutine) || '[]') }
     };
     return serializeBackup(data, false);
   };
@@ -592,23 +592,17 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
       const parsed = parseBackup(jsonStr);
       // Retain a complete pre-restore copy before changing any existing local data.
       const previous = getBackupJSON();
-      const writes = [[STORAGE_KEY_PROFILE, parsed.profile], [STORAGE_KEY_LOGS, parsed.dailyLogs], [STORAGE_KEY_CUSTOM_FOODS, parsed.customFoods], [STORAGE_KEY_WEIGHTS, parsed.weightHistory]] as const;
-      const oldValues = writes.map(([key]) => [key, localStorage.getItem(key)] as const);
-      localStorage.setItem(recoveryKey, previous);
+      const writes = [[STORAGE_KEY_PROFILE, parsed.profile], [STORAGE_KEY_LOGS, parsed.dailyLogs], [STORAGE_KEY_CUSTOM_FOODS, parsed.customFoods], [STORAGE_KEY_WEIGHTS, parsed.weightHistory], ...(parsed.settings?.supplementRoutine ? [[keys.supplementRoutine, parsed.settings.supplementRoutine] as const] : [])] as const;
+      persistRestore(localStorage, recoveryKey, previous, writes);
       setHasRecoveryBackup(true);
-      try {
-        for (const [key, value] of writes) localStorage.setItem(key, JSON.stringify(value));
-      } catch (error) {
-        for (const [key, value] of oldValues) {
-          try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch { /* Recovery copy remains available. */ }
-        }
-        throw error;
-      }
       setProfile(parsed.profile); setDailyLogs(parsed.dailyLogs);
       setCustomFoods(parsed.customFoods); customFoodsRef.current = parsed.customFoods;
       setWeightHistory(parsed.weightHistory);
+      setRoutineContent(readRoutineContent());
+      window.dispatchEvent(new Event('calorie-pewar-routine-change'));
       return true;
     } catch (err) {
+      try { setHasRecoveryBackup(Boolean(localStorage.getItem(recoveryKey))); } catch { /* Storage unavailable. */ }
       console.error('Import backup failed:', err);
       return false;
     }
@@ -618,6 +612,15 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
     if (!recovery) throw new Error('No pre-restore copy is available.');
     return exportBackupFile(recovery);
   };
+
+  const exportCorruptRecoveryJSON = () => {
+    const records = collectCorruptRecovery(localStorage, recoveryDataKeys);
+    if (!Object.keys(records).length) throw new Error('No damaged-data recovery copy is available.');
+    return exportBackupFile(JSON.stringify({format: 'calorie-pewar-raw-recovery', exportedAt: new Date().toISOString(), records}, null, 2));
+  };
+
+  const aiStatus = useAIStatus();
+  const isPremium = aiStatus.isPremium;
 
   return (
     <FitnessContext.Provider
@@ -633,7 +636,7 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
         lastSyncedAt,
         activeTab,
         setActiveTab,
-        setCurrentDate,
+        setCurrentDate: safeSetCurrentDate,
         updateProfile,
         completeOnboarding,
         logFood,
@@ -641,16 +644,15 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
         addCustomFood,
         addWorkout,
         removeWorkout,
+        logSupplement,
+        updateSupplement,
+        removeSupplement,
+        setDailySupplements,
         updateWater,
         setWaterAmount,
         updateSteps,
         addWeightEntry,
         saveDayAIReport,
-        updateReminderSettings,
-        markSupplementTaken,
-        addNutrientIntake,
-        updateNutrientIntake,
-        removeNutrientIntake,
         connectGoogleAccount,
         disconnectGoogleAccount,
         resetAccountAndData,
@@ -663,7 +665,12 @@ export const FitnessProvider: React.FC<{ children: React.ReactNode; accountId?: 
         exportRecoveryBackupJSON,
         exportBackupJSON,
         getBackupJSON,
-        importBackupJSON
+        importBackupJSON,
+        isPremium,
+        exportCorruptRecoveryJSON,
+        hasCorruptRecoveryBackup,
+        storageError,
+        retryStoragePersistence
       }}
     >
       {children}

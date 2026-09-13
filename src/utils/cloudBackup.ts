@@ -4,7 +4,7 @@ import { nextRevision, serializeBackup, validateCloudDocument, type CloudSnapsho
 
 function requireAccount(accountId?: string) {
  const user=firebaseAuth?.currentUser;
- if(!firebaseApp || !accountId || !user || user.uid!==accountId || !user.emailVerified) throw new Error('Sign in with a verified account to use cloud backup.');
+ if(!firebaseApp || !accountId || !user || user.uid!==accountId) throw new Error('Sign in to use cloud backup.');
  if(typeof navigator!=='undefined' && navigator.onLine===false) throw new Error('You are offline. Connect to the internet and try again.');
  return {user,reference:doc(getFirestore(firebaseApp),'fitnessBackups',accountId)};
 }

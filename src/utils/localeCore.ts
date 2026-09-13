@@ -1,10 +1,10 @@
 export type Locale = 'en' | 'ar' | 'ckb';
 export function detectLocale(language: string): Locale {
-  if (/^(ckb|ku(?:-Arab|-IQ))/i.test(language)) return 'ckb';
+  if (/^(?:ckb(?:-|$)|ku-(?:Arab|IQ)(?:-|$))/i.test(language)) return 'ckb';
   return /^ar(?:-|$)/i.test(language) ? 'ar' : 'en';
 }
 export function normalizeSearch(text: string): string {
-  return text.normalize('NFKC').toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'')
+  return text.normalize('NFKC').toLowerCase().replace(/[\u064B-\u065F\u0670\u0640\u200C\u200D\u200E\u200F\u2066-\u2069]/g,'')
     .replace(/[أإآٱ]/g,'ا').replace(/ك/g,'ک').replace(/[يى]/g,'ی')
     .replace(/[٠-٩]/g, c=>String(c.charCodeAt(0)-0x660))
     .replace(/[۰-۹]/g, c=>String(c.charCodeAt(0)-0x6f0)).replace(/\s+/g,' ').trim();

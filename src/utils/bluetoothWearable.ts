@@ -33,7 +33,13 @@ export class BluetoothWearableManager {
   }
 
   public isBluetoothSupported(): boolean {
-    return typeof navigator !== 'undefined' && 'bluetooth' in navigator;
+    return (
+      typeof window !== 'undefined' &&
+      Boolean(window.isSecureContext) &&
+      typeof navigator !== 'undefined' &&
+      'bluetooth' in navigator &&
+      typeof (navigator as any).bluetooth?.requestDevice === 'function'
+    );
   }
 
   public getState(): WearableDeviceState {
@@ -50,7 +56,7 @@ export class BluetoothWearableManager {
     if (!this.isBluetoothSupported()) {
       return {
         success: false,
-        message: 'Web Bluetooth API is not supported in this browser. Please use Chrome, Edge, or an Android browser with Bluetooth enabled.'
+        message: 'Direct Web Bluetooth is not supported in mobile WebViews. To sync your Smartwatch (Galaxy Watch, Wear OS, Apple Watch, Garmin), switch to the "Health Apps" tab to connect via Google Health Connect.'
       };
     }
 

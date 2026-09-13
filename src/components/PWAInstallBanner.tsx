@@ -78,7 +78,7 @@ export const PWAInstallBanner: React.FC = () => {
             <Smartphone className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <span className="text-xs font-bold text-white truncate block">{t("Install NutriFit App")}</span>
+            <span className="text-xs font-bold text-white truncate block">{t("Install Calorie Pewar App")}</span>
             <span className="text-[11px] text-slate-300 truncate block">{t("Add to iPhone / Android Home Screen")}</span>
           </div>
         </div>
@@ -88,14 +88,14 @@ export const PWAInstallBanner: React.FC = () => {
             id="btn-install-pwa"
             type="button"
             onClick={handleInstallClick}
-            className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl flex items-center gap-1.5 shadow-md transition-all active:scale-95"
+            className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black rounded-xl flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer shrink-0 whitespace-nowrap"
           >
             <Download className="w-3.5 h-3.5" />
             <span>{t("Install")}</span>
           </button>
           <button
             onClick={() => setShowBanner(false)}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -115,7 +115,7 @@ export const PWAInstallBanner: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Smartphone className="w-5 h-5 text-emerald-400" />
-                  <span>{t("How to Install NutriFit")}</span>
+                  <span>{t("How to Install Calorie Pewar")}</span>
                 </h3>
                 <button
                   onClick={() => setShowGuideModal(false)}
@@ -168,8 +168,8 @@ export const PWAInstallBanner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowGuideModal(false)}
-                className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition-colors"
-              >{t(" Got It! ")}</button>
+                className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+              >{t("Got It!")}</button>
             </motion.div>
           </div>
         ))}

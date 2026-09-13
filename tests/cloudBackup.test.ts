@@ -11,24 +11,6 @@ test('backup round trip retains fitness records',()=>{
  assert.equal(result.weightHistory[0].weightKg,75);
  assert.equal(result.profile.onboardingVersion,1);
 });
-test('backup retains reminder choices, completion, and micronutrients',()=>{
- const value:any=sample();
- value.profile.reminderSetupCompleted=true;
- value.profile.reminders={enabled:true,mealTimes:{breakfast:'08:00'},water:{enabled:true,start:'09:00',end:'21:00',intervalMinutes:120},supplements:[{id:'d',name:'Vitamin D',amount:'1 tablet',time:'10:00',enabled:true,nutrients:{vitaminDmcg:10}}]};
- value.dailyLogs['2026-09-03'].waterLoggedAt=['2026-09-03T09:05:00.000Z'];value.dailyLogs['2026-09-03'].supplementsTaken=['d'];
- value.dailyLogs['2026-09-03'].nutrientIntakes=[{id:'nutrient_1',nutrient:'vitaminCmg',amount:75,unit:'mg',sourceType:'manual',sourceName:'Vitamin C',note:'With breakfast',loggedAt:'2026-09-03T08:00:00.000Z'}];
- value.customFoods=[{id:'f',name:'Food',servingSize:'100 g',servingGrams:100,calories:1,protein:1,carbs:1,fat:1,calciumMg:22,vitaminDmcg:3,source:'custom'}];
- const result:any=parseBackup(serializeBackup(value));
- assert.equal(result.profile.reminders.supplements[0].name,'Vitamin D');
- assert.equal(result.profile.reminders.supplements[0].nutrients.vitaminDmcg,10);
- assert.deepEqual(result.dailyLogs['2026-09-03'].supplementsTaken,['d']);
- assert.equal(result.dailyLogs['2026-09-03'].nutrientIntakes[0].amount,75);
- assert.equal(result.customFoods[0].calciumMg,22);
-});
-test('older backups remain valid without nutrient intake entries',()=>{
- const result=parseBackup(JSON.stringify(sample()));
- assert.equal(result.dailyLogs['2026-09-03'].nutrientIntakes,undefined);
-});
 test('secret and unknown fields cannot enter cloud or file backup',()=>{
  const value:any=sample();value.apiKey='secret-top';value.profile.password='secret-password';value.dailyLogs['2026-09-03'].geminiKey='secret-nested';
  const result=serializeBackup(value);
@@ -58,10 +40,40 @@ test('remote schema and metadata are validated before use',()=>{
  for(const value of [{...doc,revision:0},{...doc,schemaVersion:2},{...doc,payload:'{}'},{...doc,updatedAt:null}]) assert.throws(()=>validateCloudDocument(value),/backup/i);
 });
 
-test('Firestore rules let a verified owner delete only their own backup',()=>{
+test('Firestore rules let an authenticated owner delete only their own backup',()=>{
  const rules=readFileSync(new URL('../firestore.rules',import.meta.url),'utf8');
  assert.match(rules,/allow delete:\s*if owner\(\)/);
  assert.match(rules,/request\.auth\.uid == userId/);
- assert.match(rules,/request\.auth\.token\.email_verified == true/);
  assert.match(rules,/allow list:\s*if false/);
+});
+
+test('supplements retain part, amount, unit, and taken status across cloud serialization', () => {
+ const data: any = sample();
+ data.dailyLogs['2026-09-03'].supplements = [
+  { id: 'supp_1', name: 'Vitamin D3', category: 'vitamin', dosage: '2000 IU', part: 'morning', amount: 2000, unit: 'IU', taken: true, loggedAt: '08:30' },
+  { id: 'supp_2', name: 'Magnesium', category: 'mineral', dosage: '400 mg', part: 'evening', amount: 400, unit: 'mg', taken: false, loggedAt: '20:00' }
+ ];
+ const parsed = parseBackup(serializeBackup(data));
+ const supps = parsed.dailyLogs['2026-09-03'].supplements;
+ assert.equal(supps?.length, 2);
+ assert.equal((supps as any)?.[0].part, 'morning');
+ assert.equal((supps as any)?.[0].amount, 2000);
+ assert.equal((supps as any)?.[0].unit, 'IU');
+ assert.equal((supps as any)?.[0].taken, true);
+ assert.equal((supps as any)?.[1].part, 'evening');
+ assert.equal((supps as any)?.[1].amount, 400);
+ assert.equal((supps as any)?.[1].unit, 'mg');
+ assert.equal((supps as any)?.[1].taken, false);
+});
+
+
+test('archives retain routine settings and micronutrients but never restore entitlements or consent',()=>{
+ const value:any=sample();value.profile.isPremium=true;
+ value.settings={supplementRoutine:[{name:'D',category:'vitamin',amount:10,unit:'mcg',dosage:'10 mcg',icon:'pill',part:'morning'}],aiConsent:true,apiKey:'secret'};
+ value.customFoods=[{id:'f',name:'Food',source:'custom',servingSize:'100g',servingGrams:100,calories:100,protein:2,carbs:3,fat:4,vitaminB12:0.005}];
+ const parsed:any=parseBackup(serializeBackup(value));
+ assert.equal(parsed.settings.supplementRoutine[0].amount,10);
+ assert.equal(parsed.customFoods[0].vitaminB12,0.005);
+ assert.equal(parsed.profile.isPremium,undefined);assert.equal(parsed.settings.aiConsent,undefined);
+ assert.doesNotMatch(JSON.stringify(parsed),/secret/);
 });

@@ -4,7 +4,7 @@ service cloud.firestore {
     match /fitnessBackups/{userId} {
       function owner() {
         return request.auth != null && request.auth.uid == userId
-          && request.auth.token.email_verified == true;
+          && !exists(/databases/$(database)/documents/accountDeletions/$(userId));
       }
       function validBackup() {
         let data = request.resource.data;
@@ -25,3 +25,4 @@ service cloud.firestore {
     match /{document=**} { allow read, write: if false; }
   }
 }
+

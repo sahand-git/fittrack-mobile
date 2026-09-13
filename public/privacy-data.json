@@ -1,0 +1,104 @@
+{
+  "en": {
+    "title": "Calorie Pewar privacy notice",
+    "updated": "Updated 13 September 2026",
+    "sections": [
+      {
+        "heading": "Your device and account",
+        "body": "Core fitness records stay on your device. Firebase Authentication handles email/password and Google sign-in. Google shares your basic profile and identity with the app; we do not receive your Google password or read Gmail. Signing out keeps local fitness records so you can return to them."
+      },
+      {
+        "heading": "Optional cloud backup",
+        "body": "Choosing Back up now sends your profile, meals, activity, weight history, custom foods and supplement routine to your private Firebase Cloud Firestore backup. Backups are manual. Credentials and AI consent are excluded. Restoring creates a local recovery copy before replacing records."
+      },
+      {
+        "heading": "Optional AI",
+        "body": "When you allow AI sharing during a signed-in session and submit an AI request, the relevant fitness context, your message and any selected meal photo pass through our server to Google Gemini. No Gemini key is stored in the app. You can withdraw consent at any time. Google processing is governed by its applicable service terms and privacy policy; avoid including information you do not want processed."
+      },
+      {
+        "heading": "Usage and security records",
+        "body": "The server stores account access settings and daily/minute AI request counters to enforce allowances. It does not intentionally save raw AI prompts or photos in the app database. Usage counters are scheduled for deletion after seven days when database expiry is configured. Hosting and Google services may process IP addresses and technical logs under their own policies."
+      },
+      {
+        "heading": "Camera, health and barcodes",
+        "body": "Camera and photo permissions are requested for scanning. A meal photo is sent for AI analysis only when you submit it. Barcode lookup sends the barcode to Open Food Facts. Native step access reads Apple Health or Android Health Connect after permission. Health records are only shared through a backup or AI request you choose. Notification permissions are optional and reminders are scheduled on the device."
+      },
+      {
+        "heading": "Export and deletion",
+        "body": "Use Backup & Account to export records and recovery copies or delete your account. Account deletion removes your login, private cloud backup, access settings, usage records and this account’s local data. A temporary deletion marker prevents old sessions from recreating backups; it is scheduled to expire after 24 hours. Guest data, exports you saved elsewhere and records on other offline devices are not remotely erased."
+      },
+      {
+        "heading": "Choices and support",
+        "body": "You can use guest mode, decline optional permissions, turn off AI sharing, and contact sahandabas2@gmail.com for privacy questions or corrections. This app is for general wellbeing and does not provide medical diagnosis."
+      }
+    ]
+  },
+  "ckb": {
+    "title": "ئاگاداریی تایبەتمەندیی Calorie Pewar",
+    "updated": "نوێکراوەتەوە لە ١٣ی ئەیلوولی ٢٠٢٦",
+    "sections": [
+      {
+        "heading": "ئامێر و هەژمارەکەت",
+        "body": "تۆمارە سەرەکییەکانی تەندروستی و وەرزش لەسەر ئامێرەکەت دەمێننەوە. Firebase Authentication چوونەژوورەوە بە ئیمەیڵ و وشەی نهێنی یان Google بەڕێوە دەبات. Google پڕۆفایل و ناسنامەی سەرەتاییت لەگەڵ بەرنامەکە هاوبەش دەکات؛ وشەی نهێنیی Googleەکەت وەرناگرین و Gmail ناخوێنینەوە. چوونەدەرەوە تۆمارە ناوخۆییەکان دەهێڵێتەوە تا بتوانیت بگەڕێیتەوە بۆیان."
+      },
+      {
+        "heading": "پاشەکەوتی هەوری ئارەزوومەندانە",
+        "body": "هەڵبژاردنی «ئێستا پاشەکەوت بکە» پڕۆفایل، ژەمەکان، چالاکی، مێژووی کێش، خۆراکە تایبەتەکان و بەرنامەی تەواوکەرەکانت دەنێرێت بۆ پاشەکەوتی تایبەتت لە Firebase Cloud Firestore. پاشەکەوتکردن بە دەست ئەنجام دەدرێت. زانیارییەکانی چوونەژوورەوە و ڕەزامەندیی زیرەکی دەستکرد لە پاشەکەوتەکەدا نین. پێش جێگرتنەوەی تۆمارەکان، گەڕاندنەوە کۆپییەکی ناوخۆیی بۆ گەڕاندنەوە دروست دەکات."
+      },
+      {
+        "heading": "زیرەکی دەستکردی ئارەزوومەندانە",
+        "body": "کاتێک لە دانیشتنێکی چوونەژوورەوەدا ڕێگە بە هاوبەشکردنی داتا بۆ زیرەکی دەستکرد دەدەیت و داواکارییەک دەنێریت، زانیارییە پەیوەندیدارەکانی تەندروستی و وەرزشت، نامەکەت و هەر وێنەیەکی هەڵبژێردراوی ژەم لە ڕێگەی ڕاژەکارەکەمانەوە بۆ Google Gemini دەچن. هیچ کلیلێکی Gemini لە بەرنامەکەدا هەڵناگیرێت. هەر کاتێک دەتوانیت ڕەزامەندییەکەت بکێشیتەوە. پرۆسێسکردنی Google بە مەرجەکانی خزمەتگوزاری و سیاسەتی تایبەتمەندیی پەیوەندیداری خۆی بەڕێوە دەچێت؛ زانیارییەک مەنووسە کە ناتەوێت پرۆسێس بکرێت."
+      },
+      {
+        "heading": "تۆمارەکانی بەکارهێنان و ئاسایش",
+        "body": "ڕاژەکار ڕێکخستنەکانی دەستگەیشتنی هەژمار و ژمێرەرە ڕۆژانە و خولەکییەکانی داواکاریی زیرەکی دەستکرد هەڵدەگرێت بۆ جێبەجێکردنی سنووری بەکارهێنان. بە ئەنقەست دەقی خاوی داواکاری یان وێنەکان لە بنکەدراوەی بەرنامە پاشەکەوت ناکات. کاتێک بەسەرچوونی بنکەدراوە ڕێک بخرێت، ژمێرەرەکان بۆ سڕینەوە دوای حەوت ڕۆژ کات بۆ دادەنرێت. خزمەتگوزارییەکانی میوانداری و Google دەکرێت ناونیشانی IP و تۆمارە تەکنیکییەکان بەپێی سیاسەتەکانی خۆیان پرۆسێس بکەن."
+      },
+      {
+        "heading": "کامێرا، تەندروستی و بارکۆد",
+        "body": "مۆڵەتی کامێرا و وێنە بۆ سکانکردن داوا دەکرێت. وێنەی ژەم تەنها کاتێک بۆ شیکردنەوە بە زیرەکی دەستکرد دەنێردرێت کە خۆت بینێریت. گەڕان بە بارکۆد، بارکۆدەکە بۆ Open Food Facts دەنێرێت. دەستگەیشتنی هەنگاو لە بەرنامەی دامەزراودا دوای مۆڵەت داتای Apple Health یان Android Health Connect دەخوێنێتەوە. تۆمارەکانی تەندروستی تەنها لە ڕێگەی پاشەکەوت یان داواکاریی زیرەکی دەستکرد کە خۆت هەڵدەبژێریت هاوبەش دەکرێن. مۆڵەتی ئاگادارکردنەوە ئارەزوومەندانەیە و کاتی بیرخەرەوەکان لەسەر ئامێرەکە دادەنرێت."
+      },
+      {
+        "heading": "هەناردەکردن و سڕینەوە",
+        "body": "«پاشەکەوت و هەژمار» بەکاربهێنە بۆ هەناردەکردنی تۆمار و کۆپییەکانی گەڕاندنەوە یان سڕینەوەی هەژمارەکەت. سڕینەوەی هەژمار زانیاریی چوونەژوورەوە، پاشەکەوتی هەوری تایبەت، ڕێکخستنەکانی دەستگەیشتن، تۆمارەکانی بەکارهێنان و داتای ناوخۆیی ئەم هەژمارە دەسڕێتەوە. نیشانەیەکی کاتیی سڕینەوە ڕێگری دەکات لەوەی دانیشتنە کۆنەکان پاشەکەوت دووبارە دروست بکەنەوە؛ بۆ بەسەرچوون دوای ٢٤ کاتژمێر کات بۆ دانراوە. داتای میوان، ئەو هەناردەکراوانەی لە شوێنێکی تر پاشەکەوتت کردوون و تۆمارەکانی ئامێرە ئۆفلاینەکانی تر لە دوورەوە ناسڕدرێنەوە."
+      },
+      {
+        "heading": "هەڵبژاردەکان و پاڵپشتی",
+        "body": "دەتوانیت دۆخی میوان بەکاربهێنیت، مۆڵەتە ئارەزوومەندانەکان ڕەت بکەیتەوە، هاوبەشکردنی داتا بۆ زیرەکی دەستکرد ناچالاک بکەیت و بۆ پرسیاری تایبەتمەندی یان ڕاستکردنەوە پەیوەندی بە sahandabas2@gmail.com بکەیت. ئەم بەرنامەیە بۆ تەندروستیی گشتییە و دەستنیشانکردنی پزیشکی پێشکەش ناکات."
+      }
+    ]
+  },
+  "ar": {
+    "title": "إشعار خصوصية Calorie Pewar",
+    "updated": "حُدّث في ١٣ سبتمبر ٢٠٢٦",
+    "sections": [
+      {
+        "heading": "جهازك وحسابك",
+        "body": "تبقى سجلات اللياقة الأساسية على جهازك. تتولى Firebase Authentication تسجيل الدخول بالبريد الإلكتروني وكلمة المرور وبواسطة Google. تشارك Google ملفك الأساسي وهويتك مع التطبيق؛ لا نتلقى كلمة مرور Google ولا نقرأ Gmail. يحتفظ تسجيل الخروج بسجلات اللياقة المحلية لتتمكن من العودة إليها."
+      },
+      {
+        "heading": "النسخ الاحتياطي السحابي الاختياري",
+        "body": "يرسل اختيار «النسخ الاحتياطي الآن» ملفك ووجباتك ونشاطك وسجل وزنك وأطعمتك المخصصة وروتين مكملاتك إلى نسختك الخاصة في Firebase Cloud Firestore. النسخ الاحتياطي يدوي. تُستثنى بيانات تسجيل الدخول وموافقة الذكاء الاصطناعي. تنشئ الاستعادة نسخة استرداد محلية قبل استبدال السجلات."
+      },
+      {
+        "heading": "الذكاء الاصطناعي الاختياري",
+        "body": "عندما تسمح بمشاركة البيانات للذكاء الاصطناعي خلال جلسة مسجّل الدخول فيها وترسل طلباً، تمر معلومات اللياقة ذات الصلة ورسالتك وأي صورة وجبة تختارها عبر خادمنا إلى Google Gemini. لا يُخزّن مفتاح Gemini في التطبيق. يمكنك سحب الموافقة في أي وقت. تخضع معالجة Google لشروط الخدمة وسياسة الخصوصية المطبقة لديها؛ تجنّب إدراج معلومات لا تريد معالجتها."
+      },
+      {
+        "heading": "سجلات الاستخدام والأمان",
+        "body": "يخزّن الخادم إعدادات صلاحيات الحساب وعدادات طلبات الذكاء الاصطناعي اليومية ولكل دقيقة لفرض حصص الاستخدام. لا يحفظ عمداً نصوص الطلبات الخام أو الصور في قاعدة بيانات التطبيق. تُجدول عدادات الاستخدام للحذف بعد سبعة أيام عند تهيئة انتهاء صلاحية بيانات قاعدة البيانات. قد تعالج خدمات الاستضافة وGoogle عناوين IP والسجلات التقنية وفق سياساتها الخاصة."
+      },
+      {
+        "heading": "الكاميرا والصحة والباركود",
+        "body": "تُطلب أذونات الكاميرا والصور للمسح. تُرسل صورة الوجبة لتحليل الذكاء الاصطناعي فقط عندما ترسلها أنت. يرسل البحث بالباركود الرمز إلى Open Food Facts. يقرأ الوصول إلى الخطوات في التطبيق المثبت بيانات Apple Health أو Android Health Connect بعد الإذن. لا تُشارك السجلات الصحية إلا عبر نسخة احتياطية أو طلب ذكاء اصطناعي تختاره. أذونات الإشعارات اختيارية وتُجدول التذكيرات على الجهاز."
+      },
+      {
+        "heading": "التصدير والحذف",
+        "body": "استخدم «النسخ الاحتياطي والحساب» لتصدير السجلات ونسخ الاسترداد أو لحذف حسابك. يزيل حذف الحساب تسجيل دخولك ونسختك السحابية الخاصة وإعدادات الصلاحيات وسجلات الاستخدام والبيانات المحلية لهذا الحساب. تمنع علامة حذف مؤقتة الجلسات القديمة من إعادة إنشاء نسخ احتياطية؛ وتُجدول لتنتهي بعد ٢٤ ساعة. لا تُمحى عن بُعد بيانات الضيف والملفات المصدّرة التي حفظتها في مكان آخر والسجلات على الأجهزة الأخرى غير المتصلة."
+      },
+      {
+        "heading": "الخيارات والدعم",
+        "body": "يمكنك استخدام وضع الضيف ورفض الأذونات الاختيارية وإيقاف مشاركة بيانات الذكاء الاصطناعي والتواصل مع sahandabas2@gmail.com لأسئلة الخصوصية أو التصحيحات. هذا التطبيق للعافية العامة ولا يقدم تشخيصاً طبياً."
+      }
+    ]
+  }
+}
